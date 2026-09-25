@@ -11,7 +11,17 @@
 export interface SeedResource {
   layer: 'once' | 'sonra';
   section: 'okuma' | 'izleme' | 'eslik';
-  kind: 'article' | 'interview' | 'video' | 'podcast' | 'music' | 'essay' | 'book' | 'film' | 'official' | 'other';
+  kind:
+    | 'article'
+    | 'interview'
+    | 'video'
+    | 'podcast'
+    | 'music'
+    | 'essay'
+    | 'book'
+    | 'film'
+    | 'official'
+    | 'other';
   heading?: string;
   title_original?: string;
   author?: string;
@@ -234,8 +244,7 @@ export const films: SeedFilm[] = [
         link_label: 'resmî metin',
         link_hint: 'kısa konu bilgisi içerir',
         spoiler_level: 'hafif',
-        note:
-          'Kore-eda, senaryoda Yuji Sakamoto ve müzikte Ryuichi Sakamoto ile çalışıyor. Cannes’ın kısa tanıtımı yaratıcı ekibe ilişkin temel bilgileri içeriyor; ayrıca filmin konusuna kısaca değiniyor.',
+        note: 'Kore-eda, senaryoda Yuji Sakamoto ve müzikte Ryuichi Sakamoto ile çalışıyor. Cannes’ın kısa tanıtımı yaratıcı ekibe ilişkin temel bilgileri içeriyor; ayrıca filmin konusuna kısaca değiniyor.',
         rights_status: 'ozgun_ozet',
       },
       {
@@ -250,8 +259,7 @@ export const films: SeedFilm[] = [
         url: 'https://ryuichisakamoto.lnk.to/twelve',
         link_label: 'albümü dinle',
         spoiler_level: 'yok',
-        note:
-          'Film müziğinden ayrı bir kayıt seçkisi. Minimal piyano ve elektronik sesler, Sakamoto’nun sessizlikle kurduğu ilişkiye yakın bir dinleme alanı açıyor.',
+        note: 'Film müziğinden ayrı bir kayıt seçkisi. Minimal piyano ve elektronik sesler, Sakamoto’nun sessizlikle kurduğu ilişkiye yakın bir dinleme alanı açıyor.',
         rights_status: 'ozgun_ozet',
       },
       {

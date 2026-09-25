@@ -1,7 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-const TEST_DB = process.env.TEST_DATABASE_URL ?? 'postgres://baglik:baglik-dev@localhost:5432/baglik_test';
+const TEST_DB =
+  process.env.TEST_DATABASE_URL ?? 'postgres://baglik:baglik-dev@localhost:5432/baglik_test';
 
 export default defineConfig({
   resolve: {

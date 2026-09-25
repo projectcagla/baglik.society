@@ -8,7 +8,8 @@ import { env } from '@/server/env';
 // before release there is simply no location to put in it.
 export async function GET(_req: Request, ctx: RouteContext<'/geceler/[no]/takvim'>) {
   const viewer = await getViewer();
-  if (!viewer) return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  if (!viewer)
+    return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
   const no = Number((await ctx.params).no);
   const view = Number.isInteger(no) ? await getEventByNumber(viewer, no) : null;
   if (!view || !view.invite || view.invite.status !== 'davetli') {
@@ -23,7 +24,9 @@ export async function GET(_req: Request, ctx: RouteContext<'/geceler/[no]/takvim
       ? [location.location_text, location.location_directions].filter(Boolean).join(' — ')
       : null;
   const description = [
-    film ? `${brandLower(film.title)}${film.director ? ` — ${brandLower(film.director)}` : ''}` : null,
+    film
+      ? `${brandLower(film.title)}${film.director ? ` — ${brandLower(film.director)}` : ''}`
+      : null,
     place ? null : event.location_public_note,
     'konum paylaşıldığında bu dosyayı yeniden indirmen gerekir; takvim uygulaması eski kopyayı kendiliğinden güncellemez.',
   ]

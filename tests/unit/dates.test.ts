@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { dateToIstanbulLocal, formatEventDate, formatTime, istanbulDayDiff, istanbulLocalToDate, relativeDay } from '@/lib/dates';
+import {
+  dateToIstanbulLocal,
+  formatEventDate,
+  formatTime,
+  istanbulDayDiff,
+  istanbulLocalToDate,
+  relativeDay,
+} from '@/lib/dates';
 
 const NIGHT = new Date('2026-09-27T19:30:00+03:00');
 

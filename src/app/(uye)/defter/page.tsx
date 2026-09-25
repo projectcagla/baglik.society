@@ -5,13 +5,18 @@ import ed from '@/components/member/Editorial.module.css';
 import { formatDay } from '@/lib/dates';
 import { programLabel } from '@/lib/text';
 import { entryVisibilityAction } from '@/server/actions/member';
+import { moderateAction } from '@/server/actions/desk';
 import { requireMember } from '@/server/auth/viewer';
 import { listFilms, listSaved } from '@/server/dal/films';
 import { listOwnEntries, listSharedEntries, type JournalEntry } from '@/server/dal/journal';
 
 export const metadata: Metadata = { title: 'defter' };
 
-const KIND: Record<string, string> = { beklenti: 'izlemeden önce', hatira: 'izledikten sonra', serbest: 'serbest' };
+const KIND: Record<string, string> = {
+  beklenti: 'izlemeden önce',
+  hatira: 'izledikten sonra',
+  serbest: 'serbest',
+};
 
 function Op({ id, op, children }: { id: string; op: string; children: React.ReactNode }) {
   return (
@@ -43,7 +48,9 @@ export default async function JournalPage() {
     listFilms(viewer),
     listSaved(viewer),
   ]);
-  const filmOptions = films.filter((f) => f.published_at).map((f) => ({ id: f.id, label: programLabel(f.program_no, f.title) }));
+  const filmOptions = films
+    .filter((f) => f.published_at)
+    .map((f) => ({ id: f.id, label: programLabel(f.program_no, f.title) }));
   const others = shared.filter((e) => e.member_id !== viewer.id);
 
   return (
@@ -51,12 +58,13 @@ export default async function JournalPage() {
       <header className={ed.pageHead}>
         <h1 className={ed.h1}>defter</h1>
         <p className={ed.lede}>
-          notların yalnızca sana görünür. istersen bir notu adınla ya da adsız olarak toplulukla paylaşabilir, sonra geri
-          alabilirsin.
+          notların yalnızca sana görünür. istersen bir notu adınla ya da adsız olarak toplulukla
+          paylaşabilir, sonra geri alabilirsin.
         </p>
         <p className={ed.muted}>
-          notlar uçtan uca şifreli değildir: sunucuda saklanır ve veritabanına doğrudan erişimi olan bir teknik yönetici
-          teknik olarak görebilir. uygulama içinde başka hiçbir üye ve yönetici özel notunu göremez.
+          notlar uçtan uca şifreli değildir: sunucuda saklanır ve veritabanına doğrudan erişimi olan
+          bir teknik yönetici teknik olarak görebilir. uygulama içinde başka hiçbir üye ve yönetici
+          özel notunu göremez.
         </p>
       </header>
 
@@ -105,7 +113,10 @@ export default async function JournalPage() {
                 </div>
                 <details className={ed.details}>
                   <summary>düzenle</summary>
-                  <JournalForm films={filmOptions} entry={{ id: e.id, filmId: e.film_id, kind: e.kind, body: e.body }} />
+                  <JournalForm
+                    films={filmOptions}
+                    entry={{ id: e.id, filmId: e.film_id, kind: e.kind, body: e.body }}
+                  />
                 </details>
               </li>
             ))}
@@ -125,7 +136,19 @@ export default async function JournalPage() {
               <li key={e.id} className={ed.entry}>
                 <EntryMeta e={e} />
                 <p className={ed.entryBody}>{e.body}</p>
-                <p className={ed.entryMeta}>{e.attribution === 'anonim' ? 'adsız' : e.attribution_name}</p>
+                <p className={ed.entryMeta}>
+                  {e.attribution === 'anonim' ? 'adsız' : e.attribution_name}
+                </p>
+                {viewer.isAdmin && viewer.mfaFresh && (
+                  <form action={moderateAction}>
+                    <input type="hidden" name="id" value={e.id} />
+                    <input type="hidden" name="what" value="journal" />
+                    <input type="hidden" name="path" value="/defter" />
+                    <button type="submit" className={ed.linkButton}>
+                      gizle (moderasyon)
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
           </ul>
@@ -142,7 +165,9 @@ export default async function JournalPage() {
           <ul role="list" className={ed.list}>
             {saved.map((s) => (
               <li key={s.resource_id} className={ed.entry}>
-                <Link href={`/filmler/${s.film_slug}/okuma#k-${s.resource_id.slice(0, 8)}`}>{s.heading ?? s.title_original}</Link>
+                <Link href={`/filmler/${s.film_slug}/okuma#k-${s.resource_id.slice(0, 8)}`}>
+                  {s.heading ?? s.title_original}
+                </Link>
                 <p className={ed.entryMeta}>
                   <span>{s.publication}</span>
                   <span>{programLabel(s.program_no, s.film_title)}</span>

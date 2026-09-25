@@ -11,7 +11,11 @@ import { deskMember } from '@/server/dal/desk';
 
 export const metadata: Metadata = { title: 'masa · üye' };
 
-const KIND: Record<string, string> = { key: 'kişisel anahtar', invite: 'davet kodu', recovery: 'kurtarma kodu' };
+const KIND: Record<string, string> = {
+  key: 'kişisel anahtar',
+  invite: 'davet kodu',
+  recovery: 'kurtarma kodu',
+};
 
 export default async function DeskMemberPage(props: PageProps<'/masa/uyeler/[id]'>) {
   const viewer = await requireAdmin();
@@ -44,14 +48,19 @@ export default async function DeskMemberPage(props: PageProps<'/masa/uyeler/[id]
                 {KIND[c.kind]} · oluşturuldu {formatShort(c.created_at)}
                 {c.used_at && ` · kullanıldı ${formatShort(c.used_at)}`}
                 {c.revoked_at && ' · geçersiz'}
-                {!c.revoked_at && !c.used_at && c.expires_at && ` · son ${formatShort(c.expires_at)}`}
+                {!c.revoked_at &&
+                  !c.used_at &&
+                  c.expires_at &&
+                  ` · son ${formatShort(c.expires_at)}`}
               </span>
             </li>
           ))}
           {creds.length === 0 && <li className={styles.item}>kod yok.</li>}
         </ul>
         <p className="meta">{sessions.length} açık oturum</p>
-        {member.status !== 'revoked' && <MemberOp id={id} op="invite" label="yeni davet kodu üret" />}
+        {member.status !== 'revoked' && (
+          <MemberOp id={id} op="invite" label="yeni davet kodu üret" />
+        )}
         {!self && <MemberOp id={id} op="sessions" label="tüm oturumlarını kapat" />}
         {isOwner && !self && <MemberOp id={id} op="mfa-reset" label="ikinci doğrulamayı sıfırla" />}
       </section>
@@ -62,10 +71,16 @@ export default async function DeskMemberPage(props: PageProps<'/masa/uyeler/[id]
           {member.status === 'revoked' ? (
             <MemberOp id={id} op="restore" label="üyeliği geri aç" />
           ) : (
-            <MemberOp id={id} op="revoke" label="üyeliği iptal et (kodlar ve oturumlar düşer)" danger />
+            <MemberOp
+              id={id}
+              op="revoke"
+              label="üyeliği iptal et (kodlar ve oturumlar düşer)"
+              danger
+            />
           )}
           <p className="meta">
-            kalıcı silme: kişinin notları, katılım kayıtları ve oturumları da silinir (KVKK silme talebi).
+            kalıcı silme: kişinin notları, katılım kayıtları ve oturumları da silinir (KVKK silme
+            talebi).
           </p>
           <MemberOp id={id} op="delete" label="kalıcı olarak sil" danger confirm />
         </section>

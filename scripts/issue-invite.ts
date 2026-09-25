@@ -9,8 +9,10 @@ const { values } = parseArgs({ options: { email: { type: 'string' } } });
 
 async function main() {
   if (!values.email) throw new Error('--email is required');
-  const [m] = await asSystem((tx) => tx<{ id: string; display_name: string }[]>`
-    select id, display_name from members where lower(email) = lower(${values.email!}) and status <> 'revoked'`);
+  const [m] = await asSystem(
+    (tx) => tx<{ id: string; display_name: string }[]>`
+    select id, display_name from members where lower(email) = lower(${values.email!}) and status <> 'revoked'`,
+  );
   if (!m) throw new Error('no active member with that e-mail');
   const code = await issueInvite(m.id, null);
   console.log(`${m.display_name}: ${code}`);

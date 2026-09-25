@@ -2,16 +2,14 @@ import 'server-only';
 import { asMember } from '@/server/db/context';
 import { actorOf, type Viewer } from '@/server/auth/viewer';
 
-export async function updateOwnProfile(v: Viewer, displayName: string, email: string | null): Promise<void> {
+export async function updateOwnProfile(
+  v: Viewer,
+  displayName: string,
+  email: string | null,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     await tx`select app.update_own_profile(${displayName}, ${email ?? ''})`;
     await tx`select app.audit('profile.update', 'member', ${v.id}, '{}'::jsonb)`;
-  });
-}
-
-export async function acknowledgePrivacy(v: Viewer): Promise<void> {
-  await asMember(actorOf(v), async (tx) => {
-    await tx`select app.ack_privacy()`;
   });
 }
 
@@ -29,7 +27,8 @@ export async function exportOwnData(v: Viewer) {
     const contributions = await tx`
       select id, film_id, question_id, parent_id, body, attribution, status, created_at
         from contributions where member_id = ${v.id} order by created_at`;
-    const marks = await tx`select resource_id, read_at, saved_at from resource_marks where member_id = ${v.id}`;
+    const marks =
+      await tx`select resource_id, read_at, saved_at from resource_marks where member_id = ${v.id}`;
     return {
       exported_at: new Date().toISOString(),
       note: 'bağlık.society üzerinde senin hakkında tutulan kayıtlar. oturum ve giriş kodu kayıtları güvenlik nedeniyle özet olarak profil sayfasında görünür.',

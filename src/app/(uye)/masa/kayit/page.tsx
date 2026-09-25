@@ -14,7 +14,10 @@ export default async function AuditPage() {
       <h1 className={styles.title}>kayıt</h1>
       <section className={styles.panel} aria-labelledby="teslimat">
         <h2 id="teslimat">bildirim teslimatları</h2>
-        <p className="meta">“saglayici_yok”: e-posta sağlayıcısı tanımlı değil, hiçbir şey gönderilmedi. kurtarma istekleri de burada görünür.</p>
+        <p className="meta">
+          “saglayici_yok”: e-posta sağlayıcısı tanımlı değil, hiçbir şey gönderilmedi. kurtarma
+          istekleri de burada görünür.
+        </p>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -48,7 +51,9 @@ export default async function AuditPage() {
       </section>
       <section className={styles.panel} aria-labelledby="islem">
         <h2 id="islem">işlem kaydı</h2>
-        <p className="meta">kodlar, adresler ve not içerikleri kayda yazılmaz; yalnızca kim, ne zaman, ne yaptı.</p>
+        <p className="meta">
+          kodlar, adresler ve not içerikleri kayda yazılmaz; yalnızca kim, ne zaman, ne yaptı.
+        </p>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>

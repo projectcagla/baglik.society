@@ -35,7 +35,11 @@ export function DraftKeeper({ formId, saved }: { formId: string; saved: boolean 
         const data: Record<string, string> = {};
         for (const el of Array.from(form.elements)) {
           const f = el as HTMLInputElement | HTMLTextAreaElement;
-          if (f.name && (f.tagName === 'TEXTAREA' || (f.tagName === 'INPUT' && ['text', 'url', ''].includes((f as HTMLInputElement).type)))) {
+          if (
+            f.name &&
+            (f.tagName === 'TEXTAREA' ||
+              (f.tagName === 'INPUT' && ['text', 'url', ''].includes((f as HTMLInputElement).type)))
+          ) {
             data[f.name] = f.value;
           }
         }

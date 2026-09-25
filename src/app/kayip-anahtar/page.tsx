@@ -10,8 +10,8 @@ export default function LostKeyPage() {
   return (
     <DoorStage compact>
       <p className={styles.copy}>
-        kayıtlı e-posta adresini yaz. adres bir üyeye aitse tek kullanımlık, yarım saat geçerli bir giriş kodu
-        gönderilir.
+        kayıtlı e-posta adresini yaz. adres bir üyeye aitse tek kullanımlık, yarım saat geçerli bir
+        giriş kodu gönderilir.
       </p>
       <RecoveryForm />
       <p className={styles.aside}>

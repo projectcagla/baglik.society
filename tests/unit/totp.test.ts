@@ -31,6 +31,8 @@ describe('totp', () => {
   it('round-trips base32 and builds an otpauth uri', () => {
     const buf = Buffer.from([0, 1, 2, 250, 251, 252, 253]);
     expect(base32Decode(base32Encode(buf))).toEqual(buf);
-    expect(otpauthUri(SECRET, 'a@b.c')).toMatch(/^otpauth:\/\/totp\/ba%C4%9Fl%C4%B1k\.society%3Aa%40b\.c\?secret=/);
+    expect(otpauthUri(SECRET, 'a@b.c')).toMatch(
+      /^otpauth:\/\/totp\/ba%C4%9Fl%C4%B1k\.society%3Aa%40b\.c\?secret=/,
+    );
   });
 });

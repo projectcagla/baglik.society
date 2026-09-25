@@ -30,7 +30,14 @@ export function ContributionForm({
       <label htmlFor={`${id}-body`} className={ui.label}>
         {label}
       </label>
-      <textarea id={`${id}-body`} name="body" className={ui.textarea} maxLength={1200} required rows={4} />
+      <textarea
+        id={`${id}-body`}
+        name="body"
+        className={ui.textarea}
+        maxLength={1200}
+        required
+        rows={4}
+      />
       <fieldset className={ui.fieldset}>
         <legend>görünürlük</legend>
         <div className={ui.segmented}>
@@ -46,7 +53,11 @@ export function ContributionForm({
         <button type="submit" className={ui.button} disabled={pending}>
           {pending ? 'bekle' : 'ekle'}
         </button>
-        <p className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`} role="status" aria-live="polite">
+        <p
+          className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`}
+          role="status"
+          aria-live="polite"
+        >
           {state.message}
         </p>
       </div>

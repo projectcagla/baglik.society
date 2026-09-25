@@ -14,19 +14,40 @@ export function ProfileForm({ name, email }: { name: string; email: string | nul
         <label htmlFor="p-name" className={ui.label}>
           ad
         </label>
-        <input id="p-name" name="displayName" className={ui.input} defaultValue={name} maxLength={80} required autoComplete="name" />
+        <input
+          id="p-name"
+          name="displayName"
+          className={ui.input}
+          defaultValue={name}
+          maxLength={80}
+          required
+          autoComplete="name"
+        />
       </div>
       <div className={ui.field}>
         <label htmlFor="p-email" className={ui.label}>
-          e-posta <span className={ui.hint}>(yalnızca giriş kodu kurtarma ve gece bildirimleri için)</span>
+          e-posta{' '}
+          <span className={ui.hint}>(yalnızca giriş kodu kurtarma ve gece bildirimleri için)</span>
         </label>
-        <input id="p-email" name="email" type="email" className={ui.input} defaultValue={email ?? ''} maxLength={200} autoComplete="email" />
+        <input
+          id="p-email"
+          name="email"
+          type="email"
+          className={ui.input}
+          defaultValue={email ?? ''}
+          maxLength={200}
+          autoComplete="email"
+        />
       </div>
       <div className={ui.row}>
         <button type="submit" className={ui.button} disabled={pending}>
           {pending ? 'bekle' : 'kaydet'}
         </button>
-        <p className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`} role="status" aria-live="polite">
+        <p
+          className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`}
+          role="status"
+          aria-live="polite"
+        >
           {state.message}
         </p>
       </div>

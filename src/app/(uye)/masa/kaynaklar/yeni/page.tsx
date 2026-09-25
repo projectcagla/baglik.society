@@ -20,7 +20,10 @@ export default async function NewResource(props: PageProps<'/masa/kaynaklar/yeni
   return (
     <>
       <p className="meta">
-        <Link href={`/masa/filmler/${filmId}`}>{programLabel(data.film.program_no, data.film.title)}</Link> · yeni kaynak
+        <Link href={`/masa/filmler/${filmId}`}>
+          {programLabel(data.film.program_no, data.film.title)}
+        </Link>{' '}
+        · yeni kaynak
       </p>
       <h1 className={styles.title}>yeni kaynak</h1>
       <ResourceForm filmId={filmId} layer={layer} />

@@ -47,7 +47,10 @@ export function hotp(secret: Buffer, counter: number, digits = 6): string {
   const h = createHmac('sha1', secret).update(msg).digest();
   const offset = h[h.length - 1]! & 0xf;
   const bin =
-    ((h[offset]! & 0x7f) << 24) | ((h[offset + 1]! & 0xff) << 16) | ((h[offset + 2]! & 0xff) << 8) | (h[offset + 3]! & 0xff);
+    ((h[offset]! & 0x7f) << 24) |
+    ((h[offset + 1]! & 0xff) << 16) |
+    ((h[offset + 2]! & 0xff) << 8) |
+    (h[offset + 3]! & 0xff);
   return String(bin % 10 ** digits).padStart(digits, '0');
 }
 
@@ -59,7 +62,11 @@ export function currentStep(nowMs = Date.now(), period = 30): number {
  * Verifies a code within ±`window` steps. Returns the matched step so the
  * caller can reject replays (step <= last accepted step), or null.
  */
-export function verifyTotp(secretB32: string, code: string, opts: { nowMs?: number; window?: number } = {}): number | null {
+export function verifyTotp(
+  secretB32: string,
+  code: string,
+  opts: { nowMs?: number; window?: number } = {},
+): number | null {
   const token = code.replace(/\s/g, '');
   if (!/^\d{6}$/.test(token)) return null;
   const secret = base32Decode(secretB32);

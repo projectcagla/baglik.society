@@ -24,21 +24,33 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
   return (
     <>
       <p className="meta">
-        <Link href={`/masa/filmler/${r.film_id}`}>{programLabel(r.program_no, r.film_title)}</Link> · kaynak
+        <Link href={`/masa/filmler/${r.film_id}`}>{programLabel(r.program_no, r.film_title)}</Link>{' '}
+        · kaynak
       </p>
       <div className={styles.head}>
         <h1 className={styles.title}>{r.heading ?? r.title_original}</h1>
-        <span className={`${styles.pill} ${r.status === 'yayinda' ? styles.pillOk : styles.pillWarn}`}>{r.status === 'yayinda' ? 'yayında' : 'taslak'}</span>
+        <span
+          className={`${styles.pill} ${r.status === 'yayinda' ? styles.pillOk : styles.pillWarn}`}
+        >
+          {r.status === 'yayinda' ? 'yayında' : 'taslak'}
+        </span>
       </div>
-      {isNew && <p className={ui.status}>kaynak taslak olarak oluşturuldu. hazır olduğunda yayımla.</p>}
+      {isNew && (
+        <p className={ui.status}>kaynak taslak olarak oluşturuldu. hazır olduğunda yayımla.</p>
+      )}
 
       <div className={ui.row}>
         <form action={resourceStatusAction}>
           <input type="hidden" name="id" value={r.id} />
           <input type="hidden" name="on" value={r.status === 'yayinda' ? '0' : '1'} />
-          <button className={`${ui.button} ${ui.small} ${ui.primary}`}>{r.status === 'yayinda' ? 'taslağa al' : 'yayımla'}</button>
+          <button className={`${ui.button} ${ui.small} ${ui.primary}`}>
+            {r.status === 'yayinda' ? 'taslağa al' : 'yayımla'}
+          </button>
         </form>
-        <Link className={`${ui.button} ${ui.small}`} href={`/filmler/${r.film_slug}/${r.layer === 'once' ? 'okuma' : 'sonra'}#k-${r.id.slice(0, 8)}`}>
+        <Link
+          className={`${ui.button} ${ui.small}`}
+          href={`/filmler/${r.film_slug}/${r.layer === 'once' ? 'okuma' : 'sonra'}#k-${r.id.slice(0, 8)}`}
+        >
           önizle
         </Link>
         {r.url && (
@@ -63,9 +75,12 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
               {checks.map((c) => (
                 <li key={c.checked_at.toISOString()} className={styles.item}>
                   <span>
-                    {formatShort(c.checked_at)} · {c.ok ? 'yanıt verdi' : 'sorun'} · {c.http_status ?? c.error ?? '—'}
+                    {formatShort(c.checked_at)} · {c.ok ? 'yanıt verdi' : 'sorun'} ·{' '}
+                    {c.http_status ?? c.error ?? '—'}
                   </span>
-                  {c.final_url && c.final_url !== r.url && <span className="meta">yönlendirdi: {c.final_url}</span>}
+                  {c.final_url && c.final_url !== r.url && (
+                    <span className="meta">yönlendirdi: {c.final_url}</span>
+                  )}
                 </li>
               ))}
             </ul>

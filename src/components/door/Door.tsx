@@ -48,7 +48,12 @@ export function DoorForm() {
       <p id={errorId} className={styles.message} role="status" aria-live="polite">
         {state.message}
       </p>
-      <button type="submit" className={styles.enter} disabled={pending} aria-busy={pending || undefined}>
+      <button
+        type="submit"
+        className={styles.enter}
+        disabled={pending}
+        aria-busy={pending || undefined}
+      >
         {pending ? 'bekle' : 'giriş'}
       </button>
     </form>

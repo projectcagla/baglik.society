@@ -64,7 +64,11 @@ export async function updateEntry(v: Viewer, id: string, input: EntryInput): Pro
   });
 }
 
-export async function shareEntry(v: Viewer, id: string, attribution: 'isimli' | 'anonim'): Promise<void> {
+export async function shareEntry(
+  v: Viewer,
+  id: string,
+  attribution: 'isimli' | 'anonim',
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     await tx`update journal_entries
                 set visibility = 'paylasildi', attribution = ${attribution},
@@ -112,7 +116,13 @@ export async function listContributions(v: Viewer, filmId: string): Promise<Cont
 
 export async function addContribution(
   v: Viewer,
-  input: { filmId: string; questionId: string | null; parentId: string | null; body: string; attribution: 'isimli' | 'anonim' },
+  input: {
+    filmId: string;
+    questionId: string | null;
+    parentId: string | null;
+    body: string;
+    attribution: 'isimli' | 'anonim';
+  },
 ): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     await tx`insert into contributions (film_id, question_id, parent_id, member_id, body, attribution, attribution_name)

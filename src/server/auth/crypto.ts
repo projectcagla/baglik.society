@@ -26,7 +26,12 @@ export function encrypt(plain: string): string {
   const iv = randomBytes(12);
   const c = createCipheriv('aes-256-gcm', key(), iv);
   const ct = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
-  return ['v1', iv.toString('base64url'), c.getAuthTag().toString('base64url'), ct.toString('base64url')].join('.');
+  return [
+    'v1',
+    iv.toString('base64url'),
+    c.getAuthTag().toString('base64url'),
+    ct.toString('base64url'),
+  ].join('.');
 }
 
 export function decrypt(box: string): string {

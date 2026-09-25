@@ -25,7 +25,8 @@ export default async function InvitationPage(props: PageProps<'/geceler/[no]/dav
         </p>
         <h1 className={ed.h1}>davetiye</h1>
         <p className={ed.lede}>
-          görseller gecenin kaydından üretilir. konum hiçbir görselde yer almaz; yalnızca davetliler ve masa indirebilir.
+          görseller gecenin kaydından üretilir. konum hiçbir görselde yer almaz; yalnızca davetliler
+          ve masa indirebilir.
         </p>
       </header>
       <div className={styles.grid}>
@@ -45,7 +46,11 @@ export default async function InvitationPage(props: PageProps<'/geceler/[no]/dav
                 <a className={`${ui.button} ${ui.small}`} href={`${base}/${f}?indir=1`} download>
                   png
                 </a>
-                <a className={`${ui.button} ${ui.small}`} href={`${base}/${f}?indir=1&bicim=jpg`} download>
+                <a
+                  className={`${ui.button} ${ui.small}`}
+                  href={`${base}/${f}?indir=1&bicim=jpg`}
+                  download
+                >
                   jpg
                 </a>
               </span>

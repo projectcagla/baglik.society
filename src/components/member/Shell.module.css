@@ -37,7 +37,9 @@
   letter-spacing: 0.04em;
   text-decoration: none;
   color: var(--ink-2);
-  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition:
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .monogram:hover {
@@ -61,7 +63,9 @@
   color: var(--ink-3);
   text-decoration: none;
   border-bottom: 1px solid transparent;
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition:
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 
 .nav a:hover {

@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: baglik
+          POSTGRES_PASSWORD: baglik-ci
+          POSTGRES_DB: baglik_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U baglik" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://baglik:baglik-ci@localhost:5432/baglik_test
+      E2E_DATABASE_URL: postgres://baglik:baglik-ci@localhost:5432/baglik_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: e2e database
+        run: PGPASSWORD=baglik-ci psql -h localhost -U baglik -d baglik_test -c 'create database baglik_e2e'
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: unit + integration (real postgres, RLS)
+        run: npm test
+      - run: npx playwright install --with-deps chromium
+      - name: e2e (production build)
+        run: npm run test:e2e
+        env:
+          CI: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-screenshots-and-report
+          path: |
+            artifacts/screenshots
+            playwright-report
+          retention-days: 14

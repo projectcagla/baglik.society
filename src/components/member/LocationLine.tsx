@@ -12,7 +12,9 @@ export function LocationLine({ event, location }: { event: EventRow; location: L
         <div className={styles.whereOpen}>
           <span className="meta">konum</span>
           <strong>{location.location_text}</strong>
-          {location.location_directions && <p className={styles.where}>{location.location_directions}</p>}
+          {location.location_directions && (
+            <p className={styles.where}>{location.location_directions}</p>
+          )}
           {href && <ExternalLink href={href}>haritada aç</ExternalLink>}
         </div>
       );

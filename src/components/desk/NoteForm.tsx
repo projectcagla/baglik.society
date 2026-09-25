@@ -10,7 +10,13 @@ import styles from './Desk.module.css';
 
 const initial: DeskState = { ok: false, message: null };
 
-export function NoteForm({ filmId, note }: { filmId: string; note?: { id: string; title: string; body: string; author_credit: string | null } }) {
+export function NoteForm({
+  filmId,
+  note,
+}: {
+  filmId: string;
+  note?: { id: string; title: string; body: string; author_credit: string | null };
+}) {
   const [state, action, pending] = useActionState(saveNoteAction, initial);
   const formId = `note-${note?.id ?? `new-${filmId}`}`;
   return (

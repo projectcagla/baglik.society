@@ -10,15 +10,25 @@ export const metadata: Metadata = { title: 'masa' };
 
 export default async function DeskHome() {
   const viewer = await requireStaff();
-  const [summary, events, mfa] = await Promise.all([deskSummary(viewer), deskEvents(viewer), viewer.isAdmin ? mfaStatus(viewer.id) : null]);
-  const upcoming = events.filter((e) => e.starts_at.getTime() > nowMs() - 6 * 3600e3 && e.status !== 'taslak').at(-1);
+  const [summary, events, mfa] = await Promise.all([
+    deskSummary(viewer),
+    deskEvents(viewer),
+    viewer.isAdmin ? mfaStatus(viewer.id) : null,
+  ]);
+  const upcoming = events
+    .filter((e) => e.starts_at.getTime() > nowMs() - 6 * 3600e3 && e.status !== 'taslak')
+    .at(-1);
 
   return (
     <>
       <div className={styles.head}>
         <h1 className={styles.title}>masa</h1>
         <span className="meta">
-          {viewer.role === 'editor' ? 'editör: içerik ve taslaklar' : viewer.mfaFresh ? 'yönetici · ikinci doğrulama açık' : 'yönetici'}
+          {viewer.role === 'editor'
+            ? 'editör: içerik ve taslaklar'
+            : viewer.mfaFresh
+              ? 'yönetici · ikinci doğrulama açık'
+              : 'yönetici'}
         </span>
       </div>
 
@@ -55,13 +65,16 @@ export default async function DeskHome() {
         <div className={styles.panel}>
           <h2>sıradaki gece</h2>
           <p>
-            {upcoming.number}. film gecesi · {upcoming.film_title ?? '—'} · {formatEventDate(upcoming.starts_at)}
+            {upcoming.number}. film gecesi · {upcoming.film_title ?? '—'} ·{' '}
+            {formatEventDate(upcoming.starts_at)}
           </p>
           <p className="meta">
             {upcoming.invited} davetli · {upcoming.yes} geliyorum
           </p>
           <p>
-            <Link href={viewer.isAdmin ? `/masa/geceler/${upcoming.id}` : '/masa/geceler'}>geceyi yönet</Link>
+            <Link href={viewer.isAdmin ? `/masa/geceler/${upcoming.id}` : '/masa/geceler'}>
+              geceyi yönet
+            </Link>
           </p>
         </div>
       )}

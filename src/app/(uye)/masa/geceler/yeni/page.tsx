@@ -9,7 +9,10 @@ export const metadata: Metadata = { title: 'masa · yeni gece' };
 
 export default async function NewEvent() {
   const viewer = await requireAdmin();
-  const films = (await deskFilms(viewer)).map((f) => ({ id: f.id, label: programLabel(f.program_no, f.title) }));
+  const films = (await deskFilms(viewer)).map((f) => ({
+    id: f.id,
+    label: programLabel(f.program_no, f.title),
+  }));
   return (
     <>
       <h1 className={styles.title}>yeni gece</h1>

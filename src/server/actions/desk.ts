@@ -38,18 +38,35 @@ const optInt = (min: number, max: number) =>
     .optional()
     .transform((v) => (v === '' || v === undefined ? null : v));
 const optUrl = z
-  .union([z.literal(''), z.string().trim().url().max(2000).regex(/^https?:\/\//, 'yalnızca http(s) bağlantısı')])
+  .union([
+    z.literal(''),
+    z
+      .string()
+      .trim()
+      .url()
+      .max(2000)
+      .regex(/^https?:\/\//, 'yalnızca http(s) bağlantısı'),
+  ])
   .optional()
   .transform((v) => (v ? v : null));
 
 function fail(err: unknown, fallback = 'kaydedilemedi.'): DeskState {
   const m = err instanceof Error ? err.message : '';
-  if (m.includes('duplicate key') && m.includes('slug')) return { ok: false, message: 'bu adres (slug) başka bir filmde kullanılıyor.' };
-  if (m.includes('duplicate key') && m.includes('program_no')) return { ok: false, message: 'bu program numarası kullanılıyor.' };
-  if (m.includes('duplicate key') && m.includes('number')) return { ok: false, message: 'bu gece numarası kullanılıyor.' };
-  if (m.includes('members_email_key')) return { ok: false, message: 'bu e-posta başka bir üyede kayıtlı.' };
-  if (m.includes('only an owner')) return { ok: false, message: 'yönetici rolleri yalnızca kurucu tarafından değiştirilebilir.' };
-  if (m.includes('not allowed') || m.includes('row-level security') || m.includes('permission denied')) {
+  if (m.includes('duplicate key') && m.includes('slug'))
+    return { ok: false, message: 'bu adres (slug) başka bir filmde kullanılıyor.' };
+  if (m.includes('duplicate key') && m.includes('program_no'))
+    return { ok: false, message: 'bu program numarası kullanılıyor.' };
+  if (m.includes('duplicate key') && m.includes('number'))
+    return { ok: false, message: 'bu gece numarası kullanılıyor.' };
+  if (m.includes('members_email_key'))
+    return { ok: false, message: 'bu e-posta başka bir üyede kayıtlı.' };
+  if (m.includes('only an owner'))
+    return { ok: false, message: 'yönetici rolleri yalnızca kurucu tarafından değiştirilebilir.' };
+  if (
+    m.includes('not allowed') ||
+    m.includes('row-level security') ||
+    m.includes('permission denied')
+  ) {
     return { ok: false, message: 'bu işlem için yetkin yok.' };
   }
   console.error('[desk]', m);
@@ -59,7 +76,12 @@ function fail(err: unknown, fallback = 'kaydedilemedi.'): DeskState {
 // ─── films ─────────────────────────────────────────────────────────────────
 const filmSchema = z.object({
   program_no: optInt(1, 9999),
-  slug: z.string().trim().max(80).regex(/^([a-z0-9]+(-[a-z0-9]+)*)?$/, 'slug: küçük harf, rakam ve tire').optional(),
+  slug: z
+    .string()
+    .trim()
+    .max(80)
+    .regex(/^([a-z0-9]+(-[a-z0-9]+)*)?$/, 'slug: küçük harf, rakam ve tire')
+    .optional(),
   title: z.string().trim().min(1, 'film adı gerekli.').max(160),
   title_original: opt(200),
   year: optInt(1880, 2100),
@@ -72,7 +94,13 @@ const filmSchema = z.object({
   themes: z
     .string()
     .optional()
-    .transform((s) => (s ?? '').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8)),
+    .transform((s) =>
+      (s ?? '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 8),
+    ),
   status: z.enum(['oneri', 'secildi', 'yaklasiyor', 'izlendi', 'arsiv']),
   sort_key: optInt(-9999, 9999),
   screened_on: z
@@ -87,9 +115,12 @@ const filmSchema = z.object({
 
 function parseFilm(form: FormData) {
   const parsed = filmSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'form geçersiz.' } as const;
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? 'form geçersiz.' } as const;
   const d = parsed.data;
-  return { input: { ...d, slug: d.slug || filmSlug(d.program_no, d.title) } as desk.FilmInput } as const;
+  return {
+    input: { ...d, slug: d.slug || filmSlug(d.program_no, d.title) } as desk.FilmInput,
+  } as const;
 }
 
 export async function createFilmAction(_prev: DeskState, form: FormData): Promise<DeskState> {
@@ -144,7 +175,18 @@ const resourceSchema = z
     layer: z.enum(['once', 'sonra']),
     section: z.enum(['okuma', 'izleme', 'eslik']),
     position: optInt(0, 999),
-    kind: z.enum(['article', 'interview', 'video', 'podcast', 'music', 'essay', 'book', 'film', 'official', 'other']),
+    kind: z.enum([
+      'article',
+      'interview',
+      'video',
+      'podcast',
+      'music',
+      'essay',
+      'book',
+      'film',
+      'official',
+      'other',
+    ]),
     heading: opt(200),
     title_original: opt(300),
     author: opt(200),
@@ -165,7 +207,9 @@ const resourceSchema = z
     rights_status: z.enum(['baglanti', 'ozgun_ozet', 'lisansli_ceviri', 'kendi_icerigi']),
     rights_note: opt(500),
   })
-  .refine((d) => d.heading || d.title_original, { message: 'başlık ya da özgün başlıktan biri gerekli.' })
+  .refine((d) => d.heading || d.title_original, {
+    message: 'başlık ya da özgün başlıktan biri gerekli.',
+  })
   .refine((d) => d.rights_status !== 'lisansli_ceviri' || !!d.rights_note, {
     message: 'lisanslı çeviri için hak notu (izin/lisans kaynağı) zorunlu.',
   });
@@ -173,7 +217,8 @@ const resourceSchema = z
 export async function saveResourceAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireStaff();
   const parsed = resourceSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
   const input = { ...parsed.data, position: parsed.data.position ?? 0 } as desk.ResourceInput;
   const id = form.get('id');
   let target: string;
@@ -213,7 +258,9 @@ export async function deleteResourceAction(form: FormData): Promise<void> {
 
 export async function checkLinkAction(form: FormData): Promise<void> {
   await requireStaff();
-  const ids = form.getAll('id').filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
+  const ids = form
+    .getAll('id')
+    .filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
   await checkLinks(ids.length ? { ids, limit: 10 } : { limit: 15, staleHours: 0 });
   revalidatePath('/masa', 'layout');
 }
@@ -229,7 +276,10 @@ export async function questionAction(form: FormData): Promise<void> {
   } else {
     const id = uuid.parse(form.get('id'));
     if (op === 'delete') await desk.deleteQuestion(v, id);
-    else if (op === 'edit') await desk.updateQuestion(v, id, { body: z.string().trim().min(1).max(400).parse(form.get('body')) });
+    else if (op === 'edit')
+      await desk.updateQuestion(v, id, {
+        body: z.string().trim().min(1).max(400).parse(form.get('body')),
+      });
     else await desk.updateQuestion(v, id, { status: op === 'publish' ? 'yayinda' : 'taslak' });
   }
   revalidatePath('/', 'layout');
@@ -238,7 +288,13 @@ export async function questionAction(form: FormData): Promise<void> {
 export async function saveNoteAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireStaff();
   const parsed = z
-    .object({ filmId: uuid, id: z.union([uuid, z.literal('')]).optional(), title: z.string().trim().min(1).max(160), body: z.string().max(20000), author_credit: opt(160) })
+    .object({
+      filmId: uuid,
+      id: z.union([uuid, z.literal('')]).optional(),
+      title: z.string().trim().min(1).max(160),
+      body: z.string().max(20000),
+      author_credit: opt(160),
+    })
     .safeParse(Object.fromEntries(form));
   if (!parsed.success) return { ok: false, message: 'başlık gerekli.' };
   try {
@@ -251,7 +307,10 @@ export async function saveNoteAction(_prev: DeskState, form: FormData): Promise<
     return fail(err);
   }
   revalidatePath('/', 'layout');
-  return { ok: true, message: 'kaydedildi (taslak olarak kalır, yayımlayana kadar üyeler görmez).' };
+  return {
+    ok: true,
+    message: 'kaydedildi (taslak olarak kalır, yayımlayana kadar üyeler görmez).',
+  };
 }
 
 export async function noteStatusAction(form: FormData): Promise<void> {
@@ -284,16 +343,22 @@ const eventSchema = z.object({
   rsvp_deadline: localDate,
   capacity: optInt(1, 500),
   location_public_note: z.string().trim().min(1).max(200),
-  guest_list_visible: z.string().optional().transform((v) => v === '1'),
+  guest_list_visible: z
+    .string()
+    .optional()
+    .transform((v) => v === '1'),
 });
 
 export async function saveEventAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireAdmin();
   const parsed = eventSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
   const starts = istanbulLocalToDate(parsed.data.starts_at);
   if (!starts) return { ok: false, message: 'başlangıç zamanı geçersiz.' };
-  const filmIds = form.getAll('film_ids').filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
+  const filmIds = form
+    .getAll('film_ids')
+    .filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
   const id = form.get('id');
   let eventId: string;
   try {
@@ -307,7 +372,10 @@ export async function saveEventAction(_prev: DeskState, form: FormData): Promise
   }
   revalidatePath('/', 'layout');
   if (!id) redirect(`/masa/geceler/${eventId}`);
-  return { ok: true, message: 'kaydedildi. davetlilerin takvim dosyası bir sonraki indirmede güncellenir.' };
+  return {
+    ok: true,
+    message: 'kaydedildi. davetlilerin takvim dosyası bir sonraki indirmede güncellenir.',
+  };
 }
 
 const privateSchema = z.object({
@@ -317,14 +385,18 @@ const privateSchema = z.object({
   location_directions: opt(600),
   release_at: localDate,
   release_audience: z.enum(['katilanlar', 'davetliler']),
-  include_in_email: z.string().optional().transform((v) => v === '1'),
+  include_in_email: z
+    .string()
+    .optional()
+    .transform((v) => v === '1'),
   admin_note: opt(1000),
 });
 
 export async function saveLocationAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireAdmin();
   const parsed = privateSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
   const { eventId, ...rest } = parsed.data;
   try {
     await desk.saveEventPrivate(v, eventId, rest);
@@ -346,12 +418,19 @@ export async function inviteesAction(form: FormData): Promise<void> {
   const eventId = uuid.parse(form.get('eventId'));
   const op = z.enum(['add', 'all', 'cancel', 'restore']).parse(form.get('op'));
   if (op === 'add') {
-    const ids = form.getAll('memberIds').filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
+    const ids = form
+      .getAll('memberIds')
+      .filter((x): x is string => typeof x === 'string' && uuid.safeParse(x).success);
     if (ids.length) await desk.inviteMembers(v, eventId, ids);
   } else if (op === 'all') {
     await desk.inviteAllActive(v, eventId);
   } else {
-    await desk.setInviteStatus(v, eventId, uuid.parse(form.get('memberId')), op === 'cancel' ? 'iptal' : 'davetli');
+    await desk.setInviteStatus(
+      v,
+      eventId,
+      uuid.parse(form.get('memberId')),
+      op === 'cancel' ? 'iptal' : 'davetli',
+    );
   }
   revalidatePath('/', 'layout');
 }
@@ -370,11 +449,17 @@ export async function notifyAction(_prev: DeskState, form: FormData): Promise<De
   const { event, priv } = detail;
   const origin = env().APP_ORIGIN ?? '';
   const night = event.number ? `${event.number}. film gecesi` : 'film gecesi';
-  const released = !!priv && ((priv.released_at && priv.released_at <= new Date()) || (priv.release_at && priv.release_at <= new Date()));
+  const released =
+    !!priv &&
+    ((priv.released_at && priv.released_at <= new Date()) ||
+      (priv.release_at && priv.release_at <= new Date()));
   if (kind === 'konum' && (!released || !priv?.location_text)) {
     return { ok: false, message: 'konum henüz açılmadı ya da girilmedi; bildirim gönderilmedi.' };
   }
-  const recipients = kind === 'konum' ? await desk.locationRecipients(v, eventId) : await desk.reminderRecipients(v, eventId);
+  const recipients =
+    kind === 'konum'
+      ? await desk.locationRecipients(v, eventId)
+      : await desk.reminderRecipients(v, eventId);
   const counts: Record<string, number> = {};
   for (const r of recipients) {
     const text =
@@ -389,7 +474,10 @@ export async function notifyAction(_prev: DeskState, form: FormData): Promise<De
       memberId: r.member_id,
       eventId,
       actorId: v.id,
-      subject: kind === 'konum' ? `bağlık.society · ${night}` : `bağlık.society · ${brandLower(night)} yaklaşıyor`,
+      subject:
+        kind === 'konum'
+          ? `bağlık.society · ${night}`
+          : `bağlık.society · ${brandLower(night)} yaklaşıyor`,
       text,
     });
     counts[status] = (counts[status] ?? 0) + 1;
@@ -408,21 +496,29 @@ export async function notifyAction(_prev: DeskState, form: FormData): Promise<De
 // ─── members (admin + MFA) ─────────────────────────────────────────────────
 const memberSchema = z.object({
   display_name: z.string().trim().min(1, 'ad gerekli.').max(80),
-  email: z.union([z.literal(''), z.string().trim().email('e-posta geçersiz.').max(200)]).transform((v) => v || null),
+  email: z
+    .union([z.literal(''), z.string().trim().email('e-posta geçersiz.').max(200)])
+    .transform((v) => v || null),
   role: z.enum(['owner', 'admin', 'editor', 'member']),
 });
 
 export async function createMemberAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireAdmin();
   const parsed = memberSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
   try {
     const id = await desk.createMember(v, parsed.data);
     const eventId = form.get('inviteTo');
-    if (typeof eventId === 'string' && uuid.safeParse(eventId).success) await desk.inviteMembers(v, eventId, [id]);
+    if (typeof eventId === 'string' && uuid.safeParse(eventId).success)
+      await desk.inviteMembers(v, eventId, [id]);
     const code = await issueInvite(id, v.id);
     revalidatePath('/masa/uyeler');
-    return { ok: true, message: 'üye eklendi. davet kodu yalnızca şimdi gösteriliyor.', secrets: [{ name: parsed.data.display_name, code }] };
+    return {
+      ok: true,
+      message: 'üye eklendi. davet kodu yalnızca şimdi gösteriliyor.',
+      secrets: [{ name: parsed.data.display_name, code }],
+    };
   } catch (err) {
     return fail(err);
   }
@@ -441,14 +537,19 @@ export async function importMembersAction(_prev: DeskState, form: FormData): Pro
   const errors: string[] = [];
   for (const line of lines) {
     const [name, email] = line.split(/[,;\t]/).map((s) => s.trim());
-    const parsed = memberSchema.safeParse({ display_name: name ?? '', email: email ?? '', role: 'member' });
+    const parsed = memberSchema.safeParse({
+      display_name: name ?? '',
+      email: email ?? '',
+      role: 'member',
+    });
     if (!parsed.success) {
       errors.push(line);
       continue;
     }
     try {
       const id = await desk.createMember(v, parsed.data);
-      if (typeof eventId === 'string' && uuid.safeParse(eventId).success) await desk.inviteMembers(v, eventId, [id]);
+      if (typeof eventId === 'string' && uuid.safeParse(eventId).success)
+        await desk.inviteMembers(v, eventId, [id]);
       secrets.push({ name: parsed.data.display_name, code: await issueInvite(id, v.id) });
     } catch {
       errors.push(line);
@@ -466,7 +567,8 @@ export async function updateMemberAction(_prev: DeskState, form: FormData): Prom
   const v = await requireAdmin();
   const id = uuid.parse(form.get('id'));
   const parsed = memberSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'form geçersiz.' };
   try {
     await desk.updateMember(v, id, parsed.data);
   } catch (err) {
@@ -479,12 +581,18 @@ export async function updateMemberAction(_prev: DeskState, form: FormData): Prom
 export async function memberOpAction(_prev: DeskState, form: FormData): Promise<DeskState> {
   const v = await requireAdmin();
   const id = uuid.parse(form.get('id'));
-  const op = z.enum(['invite', 'sessions', 'revoke', 'restore', 'mfa-reset', 'delete']).parse(form.get('op'));
+  const op = z
+    .enum(['invite', 'sessions', 'revoke', 'restore', 'mfa-reset', 'delete'])
+    .parse(form.get('op'));
   try {
     switch (op) {
       case 'invite': {
         const code = await issueInvite(id, v.id);
-        return { ok: true, message: 'yeni tek kullanımlık davet kodu. önceki kullanılmamış kodlar geçersiz.', secrets: [{ name: 'kod', code }] };
+        return {
+          ok: true,
+          message: 'yeni tek kullanımlık davet kodu. önceki kullanılmamış kodlar geçersiz.',
+          secrets: [{ name: 'kod', code }],
+        };
       }
       case 'sessions': {
         const n = await endAllSessionsFor(id, v.id);
@@ -503,7 +611,8 @@ export async function memberOpAction(_prev: DeskState, form: FormData): Promise<
         await resetMfa(id, v.id);
         return { ok: true, message: 'ikinci doğrulama sıfırlandı.' };
       case 'delete':
-        if (form.get('confirm') !== 'sil') return { ok: false, message: 'silmek için kutuya “sil” yaz.' };
+        if (form.get('confirm') !== 'sil')
+          return { ok: false, message: 'silmek için kutuya “sil” yaz.' };
         await desk.deleteMember(v, id);
         break;
     }
@@ -529,7 +638,11 @@ export async function startMfaAction(): Promise<MfaState> {
     const { secret, uri } = await beginEnrollment(v.id, v.email ?? v.displayName);
     const QR = await import('qrcode');
     // PNG data URL rendered with <img>; no markup injection path
-    const qr = await QR.toDataURL(uri, { margin: 1, width: 240, color: { dark: '#F2EEF3', light: '#0A0A0C' } });
+    const qr = await QR.toDataURL(uri, {
+      margin: 1,
+      width: 240,
+      color: { dark: '#F2EEF3', light: '#0A0A0C' },
+    });
     return { message: null, secret, uri, qr };
   } catch {
     return { message: 'kurulum başlatılamadı (zaten etkin olabilir).' };
@@ -545,4 +658,15 @@ export async function verifyMfaAction(_prev: MfaState, form: FormData): Promise<
   if (result === 'invalid') return { message: 'kod doğrulanamadı.' };
   const back = String(form.get('r') ?? '');
   redirect(back.startsWith('/masa') && !back.startsWith('//') ? back : '/masa');
+}
+
+// ─── moderation ────────────────────────────────────────────────────────────
+export async function moderateAction(form: FormData): Promise<void> {
+  const v = await requireAdmin();
+  const id = uuid.parse(form.get('id'));
+  const what = z.enum(['contribution', 'journal']).parse(form.get('what'));
+  const path = z.string().startsWith('/').max(200).parse(form.get('path'));
+  if (what === 'contribution') await desk.moderateContribution(v, id, 'kaldirildi');
+  else await desk.moderateJournal(v, id, 'gizlendi');
+  revalidatePath(path);
 }

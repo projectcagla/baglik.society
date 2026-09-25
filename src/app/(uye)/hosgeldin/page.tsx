@@ -16,8 +16,9 @@ export default async function WelcomePage() {
         <p className={ed.kicker}>kişisel anahtar</p>
         <h1 className={ed.h1}>hoş geldin, {viewer.displayName.split(' ')[0]}.</h1>
         <p className={ed.lede}>
-          bu tarayıcıda oturumun açık. davet kodun tek kullanımlıktı; başka bir cihazdan ya da oturumun kapandığında
-          kapıdan girmek için kişisel bir anahtara ihtiyacın var. anahtar yalnızca sana aittir; kimseyle paylaşma.
+          bu tarayıcıda oturumun açık. davet kodun tek kullanımlıktı; başka bir cihazdan ya da
+          oturumun kapandığında kapıdan girmek için kişisel bir anahtara ihtiyacın var. anahtar
+          yalnızca sana aittir; kimseyle paylaşma.
         </p>
       </header>
       <section className={`${ed.section} ${ed.narrow}`}>

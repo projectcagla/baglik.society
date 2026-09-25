@@ -4,7 +4,14 @@ import { asSystem } from '@/server/db/system';
 import { closeDb } from '@/server/db/client';
 import { getEventByNumber, nextEvent, setRsvp } from '@/server/dal/events';
 import { auditLog, saveEventPrivate } from '@/server/dal/desk';
-import { eventTwo, hoursFromNow, invite, makeMember, setPrivate, viewerFor } from '../support/fixtures';
+import {
+  eventTwo,
+  hoursFromNow,
+  invite,
+  makeMember,
+  setPrivate,
+  viewerFor,
+} from '../support/fixtures';
 
 // The one secret this app keeps: where film night 002 happens.
 const SECRET = 'GIZLI-ADRES Moda Caddesi 123';
@@ -32,12 +39,20 @@ describe('location release', () => {
   });
 
   afterEach(async () => {
-    await setPrivate(eventId, { location_text: null, release_at: null, released_at: null, release_audience: 'katilanlar' });
+    await setPrivate(eventId, {
+      location_text: null,
+      release_at: null,
+      released_at: null,
+      release_audience: 'katilanlar',
+    });
     await asSystem((tx) => tx`update event_invitees set rsvp = null where event_id = ${eventId}`);
   });
 
   it('starts empty: the seed has no location and shows the exact public note', async () => {
-    const [p] = await asSystem((tx) => tx`select location_text, release_at, released_at from event_private where event_id = ${eventId}`);
+    const [p] = await asSystem(
+      (tx) =>
+        tx`select location_text, release_at, released_at from event_private where event_id = ${eventId}`,
+    );
     expect(p).toMatchObject({ location_text: null, release_at: null, released_at: null });
     const view = await getEventByNumber(invited, 2);
     expect(view?.location.state).toBe('gizli');
@@ -50,40 +65,72 @@ describe('location release', () => {
     for (const v of [invited, editor, adminNoMfa, outsider]) {
       const everything = JSON.stringify([await getEventByNumber(v, 2), await nextEvent(v)]);
       expect(everything, v.role).not.toContain('GIZLI-ADRES');
-      const direct = await asMember({ memberId: v.id, mfa: v.mfaFresh }, (tx) => tx`select * from event_private`);
+      const direct = await asMember(
+        { memberId: v.id, mfa: v.mfaFresh },
+        (tx) => tx`select * from event_private`,
+      );
       expect(direct, v.role).toHaveLength(0);
     }
     // only the admin with a fresh second factor can read the table itself
-    const adminRows = await asMember({ memberId: admin.id, mfa: true }, (tx) => tx<{ location_text: string }[]>`select location_text from event_private`);
+    const adminRows = await asMember(
+      { memberId: admin.id, mfa: true },
+      (tx) => tx<{ location_text: string }[]>`select location_text from event_private`,
+    );
     expect(adminRows[0]?.location_text).toBe(SECRET);
   });
 
   it('after release: attendees see it, invitees who have not said yes do not', async () => {
     await setPrivate(eventId, { location_text: SECRET, release_at: hoursFromNow(-1) });
-    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({ state: 'katilim_gerekli', location_text: null });
+    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({
+      state: 'katilim_gerekli',
+      location_text: null,
+    });
     await setRsvp(invited, eventId, 'geliyorum', null);
-    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({ state: 'acik', location_text: SECRET });
+    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({
+      state: 'acik',
+      location_text: SECRET,
+    });
     // not invited: nothing, not even the event
     expect(await getEventByNumber(outsider, 2)).toBeNull();
-    const [row] = await asMember({ memberId: outsider.id, mfa: false }, (tx) => tx<{ state: string; location_text: string | null }[]>`select * from app.event_location(${eventId})`);
+    const [row] = await asMember(
+      { memberId: outsider.id, mfa: false },
+      (tx) =>
+        tx<
+          { state: string; location_text: string | null }[]
+        >`select * from app.event_location(${eventId})`,
+    );
     expect(row).toMatchObject({ state: 'yok', location_text: null });
   });
 
   it('audience "davetliler" releases to every invitee', async () => {
-    await setPrivate(eventId, { location_text: SECRET, release_at: hoursFromNow(-1), release_audience: 'davetliler' });
+    await setPrivate(eventId, {
+      location_text: SECRET,
+      release_at: hoursFromNow(-1),
+      release_audience: 'davetliler',
+    });
     expect((await getEventByNumber(invited, 2))?.location.state).toBe('acik');
   });
 
   it('released without a real address: honest fallback, nothing invented', async () => {
     await setPrivate(eventId, { location_text: null, released_at: new Date() });
     await setRsvp(invited, eventId, 'geliyorum', null);
-    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({ state: 'paylasilmadi', location_text: null });
+    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({
+      state: 'paylasilmadi',
+      location_text: null,
+    });
   });
 
   it('cancelling the event hides a released location', async () => {
-    await setPrivate(eventId, { location_text: SECRET, released_at: new Date(), release_audience: 'davetliler' });
+    await setPrivate(eventId, {
+      location_text: SECRET,
+      released_at: new Date(),
+      release_audience: 'davetliler',
+    });
     await asSystem((tx) => tx`update events set status = 'iptal' where id = ${eventId}`);
-    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({ state: 'iptal', location_text: null });
+    expect((await getEventByNumber(invited, 2))?.location).toMatchObject({
+      state: 'iptal',
+      location_text: null,
+    });
     await asSystem((tx) => tx`update events set status = 'davet' where id = ${eventId}`);
   });
 
@@ -104,7 +151,15 @@ describe('location release', () => {
 
   it('an admin without a fresh second factor cannot change the location', async () => {
     await expect(
-      saveEventPrivate(adminNoMfa, eventId, { location_text: 'x', location_url: null, location_directions: null, release_at: null, release_audience: 'katilanlar', include_in_email: false, admin_note: null }),
+      saveEventPrivate(adminNoMfa, eventId, {
+        location_text: 'x',
+        location_url: null,
+        location_directions: null,
+        release_at: null,
+        release_audience: 'katilanlar',
+        include_in_email: false,
+        admin_note: null,
+      }),
     ).rejects.toThrow(/not allowed/);
   });
 });

@@ -61,7 +61,11 @@ const NO_LOCATION: LocationView = {
   released_from: null,
 };
 
-async function hydrate(tx: Parameters<Parameters<typeof asMember>[1]>[0], v: Viewer, event: EventRow): Promise<EventView> {
+async function hydrate(
+  tx: Parameters<Parameters<typeof asMember>[1]>[0],
+  v: Viewer,
+  event: EventRow,
+): Promise<EventView> {
   const films = await tx<EventFilm[]>`
     select f.id, f.slug, f.title, f.title_original, f.director, f.year, f.program_no
       from event_films ef join films f on f.id = ef.film_id
@@ -72,7 +76,11 @@ async function hydrate(tx: Parameters<Parameters<typeof asMember>[1]>[0], v: Vie
   // The only way a member reads a location: the database decides.
   const [location] = await tx<LocationView[]>`select * from app.event_location(${event.id})`;
   const guests = event.guest_list_visible
-    ? (await tx<{ display_name: string }[]>`select display_name from app.event_guest_list(${event.id})`).map((g) => g.display_name)
+    ? (
+        await tx<
+          { display_name: string }[]
+        >`select display_name from app.event_guest_list(${event.id})`
+      ).map((g) => g.display_name)
     : null;
   return { event, films, invite: invite ?? null, location: location ?? NO_LOCATION, guests };
 }
@@ -116,14 +124,21 @@ export async function listEvents(v: Viewer): Promise<EventListItem[]> {
 
 export async function getEventByNumber(v: Viewer, number: number): Promise<EventView | null> {
   return asMember(actorOf(v), async (tx) => {
-    const [event] = await tx<EventRow[]>`select * from events where number = ${number} and status <> 'taslak'`;
+    const [event] = await tx<
+      EventRow[]
+    >`select * from events where number = ${number} and status <> 'taslak'`;
     return event ? hydrate(tx, v, event) : null;
   });
 }
 
 export type RsvpValue = 'geliyorum' | 'gelemiyorum' | 'belirsiz';
 
-export async function setRsvp(v: Viewer, eventId: string, rsvp: RsvpValue, note: string | null): Promise<void> {
+export async function setRsvp(
+  v: Viewer,
+  eventId: string,
+  rsvp: RsvpValue,
+  note: string | null,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     await tx`select app.set_rsvp(${eventId}, ${rsvp}, ${note})`;
   });

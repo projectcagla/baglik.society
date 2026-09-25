@@ -97,10 +97,17 @@ export function isMfaFresh(verifiedAt: Date | null): boolean {
 }
 
 export async function revokeSessionByToken(token: string): Promise<void> {
-  await asSystem((tx) => tx`update private.sessions set revoked_at = now() where token_hash = ${sha256(token)} and revoked_at is null`);
+  await asSystem(
+    (tx) =>
+      tx`update private.sessions set revoked_at = now() where token_hash = ${sha256(token)} and revoked_at is null`,
+  );
 }
 
-export async function revokeAllSessions(tx: Tx, memberId: string, exceptSessionId?: string): Promise<number> {
+export async function revokeAllSessions(
+  tx: Tx,
+  memberId: string,
+  exceptSessionId?: string,
+): Promise<number> {
   const rows = exceptSessionId
     ? await tx`update private.sessions set revoked_at = now()
                 where member_id = ${memberId} and revoked_at is null and id <> ${exceptSessionId} returning id`
@@ -127,10 +134,13 @@ export async function listSessions(memberId: string): Promise<SessionListItem[]>
 
 export async function revokeOwnSession(memberId: string, sessionId: string): Promise<void> {
   await asSystem(
-    (tx) => tx`update private.sessions set revoked_at = now() where id = ${sessionId} and member_id = ${memberId}`,
+    (tx) =>
+      tx`update private.sessions set revoked_at = now() where id = ${sessionId} and member_id = ${memberId}`,
   );
 }
 
 export async function markSessionMfa(sessionId: string): Promise<void> {
-  await asSystem((tx) => tx`update private.sessions set mfa_verified_at = now() where id = ${sessionId}`);
+  await asSystem(
+    (tx) => tx`update private.sessions set mfa_verified_at = now() where id = ${sessionId}`,
+  );
 }

@@ -16,11 +16,17 @@ export async function mfaStatus(memberId: string): Promise<MfaStatus> {
       select secret_enc, enabled_at from private.member_mfa where member_id = ${memberId}`,
   );
   if (!row) return { enrolled: false, pendingSecret: null };
-  return { enrolled: !!row.enabled_at, pendingSecret: row.enabled_at ? null : decrypt(row.secret_enc) };
+  return {
+    enrolled: !!row.enabled_at,
+    pendingSecret: row.enabled_at ? null : decrypt(row.secret_enc),
+  };
 }
 
 /** Starts (or restarts) enrolment. Returns the secret + otpauth URI to show once. */
-export async function beginEnrollment(memberId: string, account: string): Promise<{ secret: string; uri: string }> {
+export async function beginEnrollment(
+  memberId: string,
+  account: string,
+): Promise<{ secret: string; uri: string }> {
   const secret = newTotpSecret();
   await asSystem(async (tx) => {
     const [existing] = await tx<{ enabled_at: Date | null }[]>`
@@ -39,11 +45,17 @@ export type MfaCheck = 'ok' | 'invalid' | 'throttled';
  * Checks a 6-digit code (enrolment confirmation or step-up). Replays of an
  * already accepted time step are refused. On success the session is marked.
  */
-export async function verifyMfa(memberId: string, sessionId: string, code: string): Promise<MfaCheck> {
+export async function verifyMfa(
+  memberId: string,
+  sessionId: string,
+  code: string,
+): Promise<MfaCheck> {
   const bucket = `mfa:${memberId}`;
   const outcome = await asSystem(async (tx): Promise<MfaCheck> => {
     if (await isLimited(tx, bucket, 'mfa')) return 'throttled';
-    const [row] = await tx<{ secret_enc: string; enabled_at: Date | null; last_step: string | null }[]>`
+    const [row] = await tx<
+      { secret_enc: string; enabled_at: Date | null; last_step: string | null }[]
+    >`
       select secret_enc, enabled_at, last_step from private.member_mfa where member_id = ${memberId} for update`;
     if (!row) return 'invalid';
     const step = verifyTotp(decrypt(row.secret_enc), code);
@@ -65,7 +77,9 @@ export async function verifyMfa(memberId: string, sessionId: string, code: strin
 /** Owner-only reset of someone else's second factor (e.g. lost phone). */
 export async function resetMfa(memberId: string, actorId: string): Promise<void> {
   await asSystem(async (tx) => {
-    const [actor] = await tx<{ role: string }[]>`select role from members where id = ${actorId} and status = 'active'`;
+    const [actor] = await tx<
+      { role: string }[]
+    >`select role from members where id = ${actorId} and status = 'active'`;
     if (actor?.role !== 'owner' || actorId === memberId) throw new Error('not allowed');
     await tx`delete from private.member_mfa where member_id = ${memberId}`;
     await tx`update private.sessions set mfa_verified_at = null where member_id = ${memberId}`;

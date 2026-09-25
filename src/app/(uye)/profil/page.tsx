@@ -11,11 +11,19 @@ import { requireMember } from '@/server/auth/viewer';
 
 export const metadata: Metadata = { title: 'profil' };
 
-const ROLE: Record<string, string> = { owner: 'kurucu', admin: 'yönetici', editor: 'editör', member: 'üye' };
+const ROLE: Record<string, string> = {
+  owner: 'kurucu',
+  admin: 'yönetici',
+  editor: 'editör',
+  member: 'üye',
+};
 
 export default async function ProfilePage() {
   const viewer = await requireMember();
-  const [sessions, keyExists] = await Promise.all([listSessions(viewer.id), hasPersonalKey(viewer.id)]);
+  const [sessions, keyExists] = await Promise.all([
+    listSessions(viewer.id),
+    hasPersonalKey(viewer.id),
+  ]);
 
   return (
     <div className={ed.page}>
@@ -40,7 +48,11 @@ export default async function ProfilePage() {
             ? 'bir anahtarın var. kaybettiysen ya da başkası gördüyse yenisini oluştur; eskisi hemen geçersiz olur.'
             : 'henüz anahtarın yok. oluşturmazsan bu oturum kapandığında yeni bir davet kodu gerekir.'}
         </p>
-        <KeyCreator hasKey={keyExists} account={viewer.email ?? viewer.displayName} next="/profil" />
+        <KeyCreator
+          hasKey={keyExists}
+          account={viewer.email ?? viewer.displayName}
+          next="/profil"
+        />
       </section>
 
       <section className={`${ed.section} ${ed.narrow}`} aria-labelledby="oturumlar">
@@ -91,18 +103,18 @@ export default async function ProfilePage() {
         </h2>
         <div className={ed.prose}>
           <p>
-            burada yalnızca adın, isteğe bağlı e-posta adresin, davet ve katılım bilgin, kendi notların ve okuma
-            işaretlerin tutulur. ip adresin saklanmaz; kötüye kullanımı sınırlamak için kısa süreli, geri çevrilemez bir
-            özet tutulur ve iki gün içinde silinir.
+            burada yalnızca adın, isteğe bağlı e-posta adresin, davet ve katılım bilgin, kendi
+            notların ve okuma işaretlerin tutulur. ip adresin saklanmaz; kötüye kullanımı sınırlamak
+            için kısa süreli, geri çevrilemez bir özet tutulur ve iki gün içinde silinir.
           </p>
           <p>
-            katılım bilgin ve özel notların diğer üyelere gösterilmez. yöneticiler katılımını görür, özel notlarını
-            göremez. veriler barındırma ve veritabanı sağlayıcısının sunucularında şifreli bağlantıyla saklanır; uçtan
-            uca şifreleme vaat edilmez.
+            katılım bilgin ve özel notların diğer üyelere gösterilmez. yöneticiler katılımını görür,
+            özel notlarını göremez. veriler barındırma ve veritabanı sağlayıcısının sunucularında
+            şifreli bağlantıyla saklanır; uçtan uca şifreleme vaat edilmez.
           </p>
           <p>
-            tüm kayıtlarını indirebilir, silinmelerini yöneticiden isteyebilirsin. hukuki metinlerin kulüp yöneticisi
-            tarafından ayrıca gözden geçirilmesi gerekir.
+            tüm kayıtlarını indirebilir, silinmelerini yöneticiden isteyebilirsin. hukuki metinlerin
+            kulüp yöneticisi tarafından ayrıca gözden geçirilmesi gerekir.
           </p>
         </div>
         <p>

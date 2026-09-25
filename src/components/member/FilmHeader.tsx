@@ -23,12 +23,20 @@ export function FilmHeader({
   return (
     <header className={styles.head}>
       <p className={ed.kicker}>
-        <Link href="/filmler">film</Link> {programNo(film.program_no)} · {FILM_STATUS_LABELS[film.status]}
+        <Link href="/filmler">film</Link> {programNo(film.program_no)} ·{' '}
+        {FILM_STATUS_LABELS[film.status]}
         {draft && <span className={`${ed.badge} ${ed.badgeDraft}`}> taslak</span>}
       </p>
       <h1 className={styles.filmTitle}>{brandLower(film.title)}</h1>
       <p className={styles.original}>
-        {[film.title_original && film.title_original.toLocaleLowerCase('en') !== film.title.toLocaleLowerCase('en') ? film.title_original : null, film.director && brandLower(film.director), film.year]
+        {[
+          film.title_original &&
+          film.title_original.toLocaleLowerCase('en') !== film.title.toLocaleLowerCase('en')
+            ? film.title_original
+            : null,
+          film.director && brandLower(film.director),
+          film.year,
+        ]
           .filter(Boolean)
           .join(' · ')}
       </p>
@@ -49,7 +57,9 @@ export function FilmHeader({
             sonra{!afterVisible && ' (yayında değil)'}
           </Link>
         ) : (
-          <span className={styles.locked} title="sonrası, gösterimden sonra açılır">sonra · kapalı</span>
+          <span className={styles.locked} title="sonrası, gösterimden sonra açılır">
+            sonra · kapalı
+          </span>
         )}
       </nav>
       {staff && (
@@ -59,7 +69,9 @@ export function FilmHeader({
           ) : (
             <>
               <Link href={`/masa/filmler/${film.id}`}>masada düzenle</Link> ·{' '}
-              <Link href={`${base}${layer === 'once' ? '' : `/${layer}`}?gorunum=uye`}>üye gibi gör</Link>
+              <Link href={`${base}${layer === 'once' ? '' : `/${layer}`}?gorunum=uye`}>
+                üye gibi gör
+              </Link>
             </>
           )}
         </p>

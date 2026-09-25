@@ -46,14 +46,22 @@ export default async function EventPage(props: PageProps<'/geceler/[no]'>) {
           {event.rsvp_deadline && !deadlinePassed && (
             <p className={styles.fine}>son bildirim: {formatEventDate(event.rsvp_deadline)}</p>
           )}
-          <RsvpForm eventId={event.id} current={invite?.rsvp ?? null} note={invite?.rsvp_note ?? null} closed={closed} />
+          <RsvpForm
+            eventId={event.id}
+            current={invite?.rsvp ?? null}
+            note={invite?.rsvp_note ?? null}
+            closed={closed}
+          />
           <p className={styles.fine}>
-            katılım bilgin yalnızca yöneticilerle paylaşılır. konum açıldığında, katılımını bildiren davetliler görür.
+            katılım bilgin yalnızca yöneticilerle paylaşılır. konum açıldığında, katılımını bildiren
+            davetliler görür.
           </p>
         </section>
       ) : (
         <section className={styles.panel}>
-          <p className={styles.fine}>bu geceye davetli görünmüyorsun; ayrıntılar yalnızca davetlilere açık.</p>
+          <p className={styles.fine}>
+            bu geceye davetli görünmüyorsun; ayrıntılar yalnızca davetlilere açık.
+          </p>
         </section>
       )}
 
@@ -80,9 +88,9 @@ export default async function EventPage(props: PageProps<'/geceler/[no]'>) {
             </Link>
           </div>
           <p className={styles.fine}>
-            takvim dosyası, kaydettiğin takvim uygulamasına (ör. google, apple) kopyalanır ve oradaki gizlilik
-            kurallarına tabidir. konum henüz paylaşılmadıysa dosyada konum yoktur; paylaşıldıktan sonra dosyayı yeniden
-            indirmen gerekir.
+            takvim dosyası, kaydettiğin takvim uygulamasına (ör. google, apple) kopyalanır ve
+            oradaki gizlilik kurallarına tabidir. konum henüz paylaşılmadıysa dosyada konum yoktur;
+            paylaşıldıktan sonra dosyayı yeniden indirmen gerekir.
           </p>
         </section>
       )}

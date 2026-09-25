@@ -13,17 +13,22 @@ export async function migrate(url?: string, log = console.log) {
     await sql`create table if not exists schema_migrations (
       name text primary key, checksum text not null, applied_at timestamptz not null default now())`;
     const applied = new Map(
-      (await sql<{ name: string; checksum: string }[]>`select name, checksum from schema_migrations`).map(
-        (r) => [r.name, r.checksum],
-      ),
+      (
+        await sql<
+          { name: string; checksum: string }[]
+        >`select name, checksum from schema_migrations`
+      ).map((r) => [r.name, r.checksum]),
     );
-    const files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+    const files = readdirSync(dir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
     for (const file of files) {
       const body = readFileSync(join(dir, file), 'utf8');
       const checksum = createHash('sha256').update(body).digest('hex');
       const prev = applied.get(file);
       if (prev) {
-        if (prev !== checksum) throw new Error(`${file} was modified after being applied. Add a new migration instead.`);
+        if (prev !== checksum)
+          throw new Error(`${file} was modified after being applied. Add a new migration instead.`);
         continue;
       }
       await sql.begin(async (tx) => {

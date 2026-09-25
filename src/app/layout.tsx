@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { connection } from 'next/server';
 import { preload } from 'react-dom';
 import './fonts.css';
 import './globals.css';
@@ -9,7 +10,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: { default: 'bağlık.society', template: '%s · bağlık.society' },
   applicationName: 'bağlık.society',
-  referrer: 'no-referrer',
+  referrer: 'same-origin',
   robots: {
     index: false,
     follow: false,
@@ -29,9 +30,20 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  preload('/fonts/cormorant-garamond-latin-500-normal.woff2', { as: 'font', type: 'font/woff2', crossOrigin: '' });
-  preload('/fonts/inter-latin-400-normal.woff2', { as: 'font', type: 'font/woff2', crossOrigin: '' });
+// Every page renders per request: the CSP nonce (set in proxy.ts) must reach
+// each <script>, which a build-time static page could not carry.
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await connection();
+  preload('/fonts/cormorant-garamond-latin-500-normal.woff2', {
+    as: 'font',
+    type: 'font/woff2',
+    crossOrigin: '',
+  });
+  preload('/fonts/inter-latin-400-normal.woff2', {
+    as: 'font',
+    type: 'font/woff2',
+    crossOrigin: '',
+  });
   return (
     <html lang="tr">
       <body>{children}</body>

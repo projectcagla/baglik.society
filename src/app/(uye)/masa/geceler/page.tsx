@@ -22,7 +22,11 @@ export default async function DeskEvents() {
           </Link>
         )}
       </div>
-      {!viewer.isAdmin && <p className="meta">geceler, davetler ve konum yalnızca yöneticiler tarafından düzenlenir.</p>}
+      {!viewer.isAdmin && (
+        <p className="meta">
+          geceler, davetler ve konum yalnızca yöneticiler tarafından düzenlenir.
+        </p>
+      )}
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
@@ -38,7 +42,17 @@ export default async function DeskEvents() {
             {events.map((e) => (
               <tr key={e.id}>
                 <td className="meta">{e.number ?? '—'}</td>
-                <td>{viewer.isAdmin ? <Link href={`/masa/geceler/${e.id}`}>{e.film_title ? brandLower(e.film_title) : 'film yok'}</Link> : e.film_title ? brandLower(e.film_title) : '—'}</td>
+                <td>
+                  {viewer.isAdmin ? (
+                    <Link href={`/masa/geceler/${e.id}`}>
+                      {e.film_title ? brandLower(e.film_title) : 'film yok'}
+                    </Link>
+                  ) : e.film_title ? (
+                    brandLower(e.film_title)
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td>{formatEventDate(e.starts_at)}</td>
                 <td>{e.status}</td>
                 {viewer.isAdmin && (

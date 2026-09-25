@@ -24,7 +24,20 @@ export function readingMinutes(text: string | null | undefined, wpm = 200): numb
   return Math.max(1, Math.round(words / wpm));
 }
 
-const MAP: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', i: 'i', ö: 'o', ş: 's', ü: 'u', â: 'a', î: 'i', û: 'u', ū: 'u', ō: 'o' };
+const MAP: Record<string, string> = {
+  ç: 'c',
+  ğ: 'g',
+  ı: 'i',
+  i: 'i',
+  ö: 'o',
+  ş: 's',
+  ü: 'u',
+  â: 'a',
+  î: 'i',
+  û: 'u',
+  ū: 'u',
+  ō: 'o',
+};
 
 export function slugify(s: string): string {
   return s

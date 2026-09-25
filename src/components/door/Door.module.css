@@ -3,10 +3,10 @@
   isolation: isolate;
   min-height: 100dvh;
   display: grid;
+  /* minmax(0, 1fr): the column may shrink below the input's intrinsic width */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
-  padding:
-    max(2.5rem, env(safe-area-inset-top))
-    var(--gutter)
+  padding: max(2.5rem, env(safe-area-inset-top)) var(--gutter)
     max(2rem, env(safe-area-inset-bottom));
   overflow: hidden;
 }
@@ -160,7 +160,9 @@
   font-size: 0.9375rem;
   letter-spacing: 0.22em;
   color: var(--ink);
-  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 
 .enter:hover:not(:disabled) {

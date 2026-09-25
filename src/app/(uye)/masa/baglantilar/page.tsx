@@ -30,8 +30,9 @@ export default async function LinksPage() {
         </form>
       </div>
       <p className="meta">
-        haftada bir otomatik denetlenir. siteler arasında bekleyerek, tek tek ve kısa zaman aşımıyla istek atılır.
-        sorunlu bağlantılar silinmez. 401/403/429 yanıtları çoğu zaman abonelik ya da bot duvarıdır; “belirsiz” sayılır.
+        haftada bir otomatik denetlenir. siteler arasında bekleyerek, tek tek ve kısa zaman aşımıyla
+        istek atılır. sorunlu bağlantılar silinmez. 401/403/429 yanıtları çoğu zaman abonelik ya da
+        bot duvarıdır; “belirsiz” sayılır.
       </p>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -57,7 +58,9 @@ export default async function LinksPage() {
                     <div className="meta">{programNo(r.program_no)}</div>
                   </td>
                   <td>{hostOf(r.url)}</td>
-                  <td className="meta">{r.link_checked_at ? formatShort(r.link_checked_at) : '—'}</td>
+                  <td className="meta">
+                    {r.link_checked_at ? formatShort(r.link_checked_at) : '—'}
+                  </td>
                 </tr>
               );
             })}

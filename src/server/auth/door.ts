@@ -21,7 +21,13 @@ interface CredentialRow {
   member_status: 'invited' | 'active' | 'revoked';
 }
 
-async function audit(tx: Tx, actor: string | null, action: string, meta: Record<string, unknown>, ip?: string) {
+async function audit(
+  tx: Tx,
+  actor: string | null,
+  action: string,
+  meta: Record<string, unknown>,
+  ip?: string,
+) {
   await tx`insert into audit_logs (actor_id, action, target_type, target_id, meta, ip_hash)
            values (${actor}, ${action}, 'member', ${actor}, ${tx.json(meta as never)}, ${ip ?? null})`;
 }
@@ -67,7 +73,9 @@ export async function enterWithCode(
     (cred.expires_at === null || cred.expires_at.getTime() > Date.now()) &&
     (cred.kind === 'key' || cred.used_at === null);
 
-  const verified = cred ? await checkVerifier(cred.verifier_hash, parsed.verifier) : (await burnVerify(parsed.verifier), false);
+  const verified = cred
+    ? await checkVerifier(cred.verifier_hash, parsed.verifier)
+    : (await burnVerify(parsed.verifier), false);
 
   if (!cred || !usable || !verified) {
     await asSystem(async (tx) => {
@@ -127,13 +135,15 @@ export async function rotatePersonalKey(memberId: string): Promise<string> {
 
 export async function hasPersonalKey(memberId: string): Promise<boolean> {
   const rows = await asSystem(
-    (tx) => tx`select 1 from private.credentials where member_id = ${memberId} and kind = 'key' and revoked_at is null`,
+    (tx) =>
+      tx`select 1 from private.credentials where member_id = ${memberId} and kind = 'key' and revoked_at is null`,
   );
   return rows.length > 0;
 }
 
 async function assertAdmin(tx: Tx, actorId: string) {
-  const rows = await tx`select 1 from members where id = ${actorId} and status = 'active' and role in ('owner', 'admin')`;
+  const rows =
+    await tx`select 1 from members where id = ${actorId} and status = 'active' and role in ('owner', 'admin')`;
   if (!rows.length) throw new Error('not allowed');
 }
 
@@ -182,7 +192,8 @@ export async function revokeMember(memberId: string, actorId: string): Promise<v
     const [actor] = await tx<{ role: string }[]>`select role from members where id = ${actorId}`;
     if (!target) throw new Error('not found');
     if (memberId === actorId) throw new Error('cannot revoke yourself');
-    if ((target.role === 'owner' || target.role === 'admin') && actor?.role !== 'owner') throw new Error('not allowed');
+    if ((target.role === 'owner' || target.role === 'admin') && actor?.role !== 'owner')
+      throw new Error('not allowed');
     await tx`update members set status = 'revoked', revoked_at = now() where id = ${memberId}`;
     await tx`update private.credentials set revoked_at = now() where member_id = ${memberId} and revoked_at is null`;
     await revokeAllSessions(tx, memberId);
@@ -198,7 +209,11 @@ export async function restoreMember(memberId: string, actorId: string): Promise<
   });
 }
 
-export async function endAllSessionsFor(memberId: string, actorId: string, keepSessionId?: string): Promise<number> {
+export async function endAllSessionsFor(
+  memberId: string,
+  actorId: string,
+  keepSessionId?: string,
+): Promise<number> {
   return asSystem(async (tx) => {
     if (actorId !== memberId) await assertAdmin(tx, actorId);
     const n = await revokeAllSessions(tx, memberId, keepSessionId);
@@ -225,7 +240,10 @@ export async function requestRecovery(email: string, ip: string | null): Promise
   const ipKey = `rec-${ipBucket(ip)}`;
   const emailKey = `rec-mail:${pepperHmac(`mail:${normalized}`).slice(0, 24)}`;
   return asSystem(async (tx) => {
-    if ((await isLimited(tx, ipKey, 'recoveryIp')) || (await isLimited(tx, emailKey, 'recoveryEmail'))) {
+    if (
+      (await isLimited(tx, ipKey, 'recoveryIp')) ||
+      (await isLimited(tx, emailKey, 'recoveryEmail'))
+    ) {
       return { kind: 'throttled' } as const;
     }
     // every request counts against the budget, found or not

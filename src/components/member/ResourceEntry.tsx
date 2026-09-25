@@ -35,13 +35,17 @@ export function ResourceEntry({
     r.duration_note,
   ].filter(Boolean);
   const labels = [
-    r.language && r.language !== 'tr' ? LANGUAGE_NAMES[r.language] ?? r.language : null,
+    r.language && r.language !== 'tr' ? (LANGUAGE_NAMES[r.language] ?? r.language) : null,
     SPOILER_LABELS[r.spoiler_level],
   ].filter(Boolean);
   const title = r.heading ?? r.title_original ?? '';
 
   return (
-    <article id={anchorOf(r)} className={compact ? styles.compact : styles.entry} aria-labelledby={`${anchorOf(r)}-t`}>
+    <article
+      id={anchorOf(r)}
+      className={compact ? styles.compact : styles.entry}
+      aria-labelledby={`${anchorOf(r)}-t`}
+    >
       {total > 1 && (
         <p className={styles.count} aria-hidden={compact || undefined}>
           {String(index).padStart(2, '0')} <span>/ {String(total).padStart(2, '0')}</span>
@@ -74,9 +78,13 @@ export function ResourceEntry({
             {brandLower(r.link_label) || 'kaynağa git'}
           </ExternalLink>
           {(r.link_hint || r.access_note) && (
-            <span className={styles.sourceHint}>{[r.link_hint, r.access_note].filter(Boolean).join(' · ')}</span>
+            <span className={styles.sourceHint}>
+              {[r.link_hint, r.access_note].filter(Boolean).join(' · ')}
+            </span>
           )}
-          {r.link_status === 'kirik' && <span className={styles.sourceHint}>bağlantı son denetimde yanıt vermedi</span>}
+          {r.link_status === 'kirik' && (
+            <span className={styles.sourceHint}>bağlantı son denetimde yanıt vermedi</span>
+          )}
         </p>
       )}
 

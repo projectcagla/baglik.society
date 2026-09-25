@@ -8,8 +8,17 @@ import { deskEvents, deskMembers } from '@/server/dal/desk';
 
 export const metadata: Metadata = { title: 'masa · üyeler' };
 
-const ROLE: Record<string, string> = { owner: 'kurucu', admin: 'yönetici', editor: 'editör', member: 'üye' };
-const STATUS: Record<string, string> = { invited: 'davet edildi', active: 'aktif', revoked: 'iptal' };
+const ROLE: Record<string, string> = {
+  owner: 'kurucu',
+  admin: 'yönetici',
+  editor: 'editör',
+  member: 'üye',
+};
+const STATUS: Record<string, string> = {
+  invited: 'davet edildi',
+  active: 'aktif',
+  revoked: 'iptal',
+};
 
 export default async function DeskMembers() {
   const viewer = await requireAdmin();
@@ -39,7 +48,9 @@ export default async function DeskMembers() {
                 </td>
                 <td>{ROLE[m.role]}</td>
                 <td>
-                  <span className={`${styles.pill} ${m.status === 'active' ? styles.pillOk : m.status === 'revoked' ? styles.pillBad : styles.pillWarn}`}>
+                  <span
+                    className={`${styles.pill} ${m.status === 'active' ? styles.pillOk : m.status === 'revoked' ? styles.pillBad : styles.pillWarn}`}
+                  >
                     {STATUS[m.status]}
                   </span>
                 </td>
@@ -54,7 +65,8 @@ export default async function DeskMembers() {
       <section className={styles.panel} aria-labelledby="yeni-uye">
         <h2 id="yeni-uye">yeni üye</h2>
         <p className="meta">
-          tek kullanımlık davet kodu 14 gün geçerlidir ve yalnızca bir kez gösterilir. kodu kişiye özel bir kanaldan ilet.
+          tek kullanımlık davet kodu 14 gün geçerlidir ve yalnızca bir kez gösterilir. kodu kişiye
+          özel bir kanaldan ilet.
         </p>
         <CreateMemberForm isOwner={viewer.role === 'owner'} nextEvent={nextEvent} />
       </section>

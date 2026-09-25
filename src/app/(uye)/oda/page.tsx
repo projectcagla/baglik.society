@@ -20,7 +20,8 @@ export default async function RoomPage() {
   ]);
   const nextFilmId = next?.films[0]?.id;
   const archive = films.filter(
-    (f) => f.published_at && f.id !== nextFilmId && (f.status === 'izlendi' || f.status === 'arsiv'),
+    (f) =>
+      f.published_at && f.id !== nextFilmId && (f.status === 'izlendi' || f.status === 'arsiv'),
   );
 
   return (
@@ -50,7 +51,8 @@ export default async function RoomPage() {
               {latest.heading ?? latest.title_original}
             </Link>
             <span className="meta">
-              {[latest.publication, latest.author].filter(Boolean).join(' · ')} — {programLabel(latest.program_no, latest.film_title)}
+              {[latest.publication, latest.author].filter(Boolean).join(' · ')} —{' '}
+              {programLabel(latest.program_no, latest.film_title)}
             </span>
           </div>
         )}

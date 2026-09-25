@@ -32,7 +32,13 @@ export function RsvpForm({
         <div className={ui.segmented}>
           {OPTIONS.map((o) => (
             <label key={o.value}>
-              <input type="radio" name="rsvp" value={o.value} defaultChecked={current === o.value} required />
+              <input
+                type="radio"
+                name="rsvp"
+                value={o.value}
+                defaultChecked={current === o.value}
+                required
+              />
               {o.label}
             </label>
           ))}
@@ -41,9 +47,20 @@ export function RsvpForm({
       <label htmlFor="rsvp-note" className={`${ui.label} ${ui.spaced}`}>
         not <span className={ui.hint}>(isteğe bağlı, yalnızca yöneticiler görür)</span>
       </label>
-      <input id="rsvp-note" name="note" className={ui.input} maxLength={280} defaultValue={note ?? ''} disabled={!!closed} />
+      <input
+        id="rsvp-note"
+        name="note"
+        className={ui.input}
+        maxLength={280}
+        defaultValue={note ?? ''}
+        disabled={!!closed}
+      />
       <div className={`${ui.row} ${ui.spaced}`}>
-        <button type="submit" className={`${ui.button} ${ui.primary}`} disabled={!!closed || pending}>
+        <button
+          type="submit"
+          className={`${ui.button} ${ui.primary}`}
+          disabled={!!closed || pending}
+        >
           {pending ? 'bekle' : 'kaydet'}
         </button>
         <p

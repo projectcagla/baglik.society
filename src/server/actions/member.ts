@@ -22,7 +22,7 @@ import {
   updateEntry,
   withdrawContribution,
 } from '@/server/dal/journal';
-import { acknowledgePrivacy, updateOwnProfile } from '@/server/dal/profile';
+import { updateOwnProfile } from '@/server/dal/profile';
 
 // Every action re-checks the session itself; Server Actions are public HTTP
 // endpoints no matter which page renders them.
@@ -81,7 +81,12 @@ export async function rsvpAction(_prev: ActionState, form: FormData): Promise<Ac
 export async function markAction(form: FormData): Promise<void> {
   const v = await requireMember();
   const parsed = z
-    .object({ resourceId: uuid, field: z.enum(['read', 'saved']), on: z.enum(['1', '0']), path: z.string().startsWith('/') })
+    .object({
+      resourceId: uuid,
+      field: z.enum(['read', 'saved']),
+      on: z.enum(['1', '0']),
+      path: z.string().startsWith('/'),
+    })
     .safeParse(Object.fromEntries(form));
   if (!parsed.success) return;
   await setMark(v, parsed.data.resourceId, parsed.data.field, parsed.data.on === '1');
@@ -97,9 +102,18 @@ const entrySchema = z.object({
 
 export async function saveEntryAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   const v = await requireMember();
-  const parsed = entrySchema.safeParse({ filmId: form.get('filmId') ?? '', kind: form.get('kind'), body: form.get('body') });
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'kaydedilemedi.' };
-  const input = { filmId: parsed.data.filmId || null, kind: parsed.data.kind, body: parsed.data.body };
+  const parsed = entrySchema.safeParse({
+    filmId: form.get('filmId') ?? '',
+    kind: form.get('kind'),
+    body: form.get('body'),
+  });
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'kaydedilemedi.' };
+  const input = {
+    filmId: parsed.data.filmId || null,
+    kind: parsed.data.kind,
+    body: parsed.data.body,
+  };
   const id = form.get('id');
   if (typeof id === 'string' && id) {
     if (!uuid.safeParse(id).success) return { ok: false, message: 'kaydedilemedi.' };
@@ -162,13 +176,20 @@ export async function withdrawContributionAction(form: FormData): Promise<void> 
 // ─── profile & keys ────────────────────────────────────────────────────────
 const profileSchema = z.object({
   displayName: z.string().trim().min(1, 'adını yaz.').max(80),
-  email: z.union([z.string().trim().email('e-posta adresi geçerli değil.').max(200), z.literal('')]),
+  email: z.union([
+    z.string().trim().email('e-posta adresi geçerli değil.').max(200),
+    z.literal(''),
+  ]),
 });
 
 export async function profileAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   const v = await requireMember();
-  const parsed = profileSchema.safeParse({ displayName: form.get('displayName'), email: form.get('email') ?? '' });
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? 'kaydedilemedi.' };
+  const parsed = profileSchema.safeParse({
+    displayName: form.get('displayName'),
+    email: form.get('email') ?? '',
+  });
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'kaydedilemedi.' };
   try {
     await updateOwnProfile(v, parsed.data.displayName, parsed.data.email || null);
   } catch {
@@ -206,10 +227,4 @@ export async function revokeSessionAction(form: FormData): Promise<void> {
   if (id === v.sessionId) return;
   await revokeOwnSession(v.id, id);
   revalidatePath('/profil');
-}
-
-export async function acknowledgePrivacyAction(): Promise<void> {
-  const v = await requireMember();
-  await acknowledgePrivacy(v);
-  revalidatePath('/', 'layout');
 }

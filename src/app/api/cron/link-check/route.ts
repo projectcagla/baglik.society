@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   const given = req.headers.get('authorization') ?? '';
   const expected = `Bearer ${secret ?? ''}`;
   const ok =
-    !!secret && given.length === expected.length && timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+    !!secret &&
+    given.length === expected.length &&
+    timingSafeEqual(Buffer.from(given), Buffer.from(expected));
   if (!ok) return new Response('Not found', { status: 404 });
   const checked = await checkLinks({ limit: 20 });
   return Response.json({ checked }, { headers: { 'Cache-Control': 'no-store' } });

@@ -7,7 +7,13 @@ import type { EventRow } from './events';
 // Editor desk data. Everything runs as `baglik_app` under RLS: an editor
 // who reaches an admin function still gets nothing from Postgres.
 
-async function audit(tx: Tx, action: string, type: string, id: string, meta: Record<string, unknown> = {}) {
+async function audit(
+  tx: Tx,
+  action: string,
+  type: string,
+  id: string,
+  meta: Record<string, unknown> = {},
+) {
   await tx`select app.audit(${action}, ${type}, ${id}, ${tx.json(meta as never)})`;
 }
 
@@ -60,7 +66,9 @@ export async function deskFilm(v: Viewer, id: string) {
     const resources = await tx<ResourceRow[]>`
       select * from resources where film_id = ${id}
        order by layer, case section when 'okuma' then 0 when 'izleme' then 1 else 2 end, position, created_at`;
-    const questions = await tx<QuestionRow[]>`select * from questions where film_id = ${id} order by layer, position, created_at`;
+    const questions = await tx<
+      QuestionRow[]
+    >`select * from questions where film_id = ${id} order by layer, position, created_at`;
     const notes = await tx<NoteRow[]>`
       select id, title, body, author_credit, status, published_at from screening_notes where film_id = ${id} order by created_at`;
     return { film, resources, questions, notes };
@@ -99,7 +107,12 @@ export async function updateFilm(v: Viewer, id: string, input: FilmInput): Promi
   });
 }
 
-export async function setFilmPublication(v: Viewer, id: string, layer: 'film' | 'after', on: boolean): Promise<void> {
+export async function setFilmPublication(
+  v: Viewer,
+  id: string,
+  layer: 'film' | 'after',
+  on: boolean,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     if (layer === 'film') {
       await tx`update films set published_at = ${on ? tx`now()` : null}, updated_by = ${v.id} where id = ${id}`;
@@ -121,23 +134,43 @@ export async function deleteFilm(v: Viewer, id: string): Promise<boolean> {
 // ─── resources ─────────────────────────────────────────────────────────────
 export type ResourceInput = Omit<
   ResourceRow,
-  'id' | 'film_id' | 'status' | 'link_status' | 'link_checked_at' | 'link_http_status' | 'updated_at'
+  | 'id'
+  | 'film_id'
+  | 'status'
+  | 'link_status'
+  | 'link_checked_at'
+  | 'link_http_status'
+  | 'updated_at'
 >;
 
 export async function deskResource(v: Viewer, id: string) {
   return asMember(actorOf(v), async (tx) => {
-    const [r] = await tx<(ResourceRow & { film_title: string; film_slug: string; program_no: number | null })[]>`
+    const [r] = await tx<
+      (ResourceRow & { film_title: string; film_slug: string; program_no: number | null })[]
+    >`
       select r.*, f.title as film_title, f.slug as film_slug, f.program_no
         from resources r join films f on f.id = r.film_id where r.id = ${id}`;
     if (!r) return null;
-    const checks = await tx<{ checked_at: Date; ok: boolean; http_status: number | null; final_url: string | null; error: string | null }[]>`
+    const checks = await tx<
+      {
+        checked_at: Date;
+        ok: boolean;
+        http_status: number | null;
+        final_url: string | null;
+        error: string | null;
+      }[]
+    >`
       select checked_at, ok, http_status, final_url, error from link_checks where resource_id = ${id}
        order by checked_at desc limit 5`;
     return { resource: r, checks };
   });
 }
 
-export async function createResource(v: Viewer, filmId: string, input: ResourceInput): Promise<string> {
+export async function createResource(
+  v: Viewer,
+  filmId: string,
+  input: ResourceInput,
+): Promise<string> {
   return asMember(actorOf(v), async (tx) => {
     const [row] = await tx<{ id: string }[]>`
       insert into resources ${tx({ ...input, film_id: filmId, status: 'taslak', created_by: v.id, updated_by: v.id } as never)}
@@ -172,7 +205,9 @@ export async function setResourceStatus(v: Viewer, id: string, publish: boolean)
 
 export async function deleteResource(v: Viewer, id: string): Promise<string | null> {
   return asMember(actorOf(v), async (tx) => {
-    const [row] = await tx<{ film_id: string }[]>`delete from resources where id = ${id} returning film_id`;
+    const [row] = await tx<
+      { film_id: string }[]
+    >`delete from resources where id = ${id} returning film_id`;
     if (row) await audit(tx, 'resource.delete', 'resource', id);
     return row?.film_id ?? null;
   });
@@ -191,12 +226,18 @@ export async function moveResource(v: Viewer, id: string, dir: -1 | 1): Promise<
     const j = i + dir;
     if (i < 0 || j < 0 || j >= ids.length) return;
     [ids[i], ids[j]] = [ids[j]!, ids[i]!];
-    for (let k = 0; k < ids.length; k++) await tx`update resources set position = ${k + 1} where id = ${ids[k]!}`;
+    for (let k = 0; k < ids.length; k++)
+      await tx`update resources set position = ${k + 1} where id = ${ids[k]!}`;
   });
 }
 
 // ─── questions & notes ─────────────────────────────────────────────────────
-export async function addQuestion(v: Viewer, filmId: string, layer: 'once' | 'sonra', body: string): Promise<void> {
+export async function addQuestion(
+  v: Viewer,
+  filmId: string,
+  layer: 'once' | 'sonra',
+  body: string,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     const [row] = await tx<{ id: string }[]>`
       insert into questions (film_id, layer, body, position, status, created_by)
@@ -207,11 +248,23 @@ export async function addQuestion(v: Viewer, filmId: string, layer: 'once' | 'so
   });
 }
 
-export async function updateQuestion(v: Viewer, id: string, patch: { body?: string; status?: 'taslak' | 'yayinda' }) {
+export async function updateQuestion(
+  v: Viewer,
+  id: string,
+  patch: { body?: string; status?: 'taslak' | 'yayinda' },
+) {
   await asMember(actorOf(v), async (tx) => {
-    if (patch.body !== undefined) await tx`update questions set body = ${patch.body} where id = ${id}`;
-    if (patch.status !== undefined) await tx`update questions set status = ${patch.status} where id = ${id}`;
-    await audit(tx, 'question.update', 'question', id, patch.status ? { status: patch.status } : {});
+    if (patch.body !== undefined)
+      await tx`update questions set body = ${patch.body} where id = ${id}`;
+    if (patch.status !== undefined)
+      await tx`update questions set status = ${patch.status} where id = ${id}`;
+    await audit(
+      tx,
+      'question.update',
+      'question',
+      id,
+      patch.status ? { status: patch.status } : {},
+    );
   });
 }
 
@@ -296,9 +349,11 @@ export async function deskEvent(v: Viewer, id: string) {
   return asMember(actorOf(v), async (tx) => {
     const [event] = await tx<EventRow[]>`select * from events where id = ${id}`;
     if (!event) return null;
-    const filmIds = (await tx<{ film_id: string }[]>`select film_id from event_films where event_id = ${id} order by position`).map(
-      (r) => r.film_id,
-    );
+    const filmIds = (
+      await tx<
+        { film_id: string }[]
+      >`select film_id from event_films where event_id = ${id} order by position`
+    ).map((r) => r.film_id);
     const [priv] = await tx<EventPrivate[]>`
       select location_text, location_url, location_directions, release_at, released_at, release_audience,
              include_in_email, admin_note from event_private where event_id = ${id}`;
@@ -333,17 +388,23 @@ export async function saveEvent(v: Viewer, id: string | null, input: EventInput)
     const { film_ids, ...fields } = input;
     let eventId = id;
     if (eventId) {
-      const rows = await tx`update events set ${tx(fields as never)}, ics_sequence = ics_sequence + 1 where id = ${eventId} returning id`;
+      const rows =
+        await tx`update events set ${tx(fields as never)}, ics_sequence = ics_sequence + 1 where id = ${eventId} returning id`;
       if (!rows.length) throw new Error('not allowed');
     } else {
-      const [row] = await tx<{ id: string }[]>`insert into events ${tx({ ...fields, created_by: v.id } as never)} returning id`;
+      const [row] = await tx<
+        { id: string }[]
+      >`insert into events ${tx({ ...fields, created_by: v.id } as never)} returning id`;
       eventId = row!.id;
       await tx`insert into event_private (event_id, updated_by) values (${eventId}, ${v.id})`;
     }
     await tx`delete from event_films where event_id = ${eventId}`;
     let pos = 0;
-    for (const f of film_ids) await tx`insert into event_films (event_id, film_id, position) values (${eventId}, ${f}, ${pos++})`;
-    await audit(tx, id ? 'event.update' : 'event.create', 'event', eventId!, { status: input.status });
+    for (const f of film_ids)
+      await tx`insert into event_films (event_id, film_id, position) values (${eventId}, ${f}, ${pos++})`;
+    await audit(tx, id ? 'event.update' : 'event.create', 'event', eventId!, {
+      status: input.status,
+    });
     return eventId!;
   });
 }
@@ -371,7 +432,11 @@ export async function saveEventPrivate(
   });
 }
 
-export async function setLocationReleased(v: Viewer, eventId: string, released: boolean): Promise<void> {
+export async function setLocationReleased(
+  v: Viewer,
+  eventId: string,
+  released: boolean,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     const rows = released
       ? await tx`update event_private set released_at = now(), updated_by = ${v.id} where event_id = ${eventId} returning event_id`
@@ -381,7 +446,11 @@ export async function setLocationReleased(v: Viewer, eventId: string, released: 
   });
 }
 
-export async function inviteMembers(v: Viewer, eventId: string, memberIds: string[]): Promise<number> {
+export async function inviteMembers(
+  v: Viewer,
+  eventId: string,
+  memberIds: string[],
+): Promise<number> {
   return asMember(actorOf(v), async (tx) => {
     let n = 0;
     for (const m of memberIds) {
@@ -407,10 +476,17 @@ export async function inviteAllActive(v: Viewer, eventId: string): Promise<numbe
   });
 }
 
-export async function setInviteStatus(v: Viewer, eventId: string, memberId: string, status: 'davetli' | 'iptal') {
+export async function setInviteStatus(
+  v: Viewer,
+  eventId: string,
+  memberId: string,
+  status: 'davetli' | 'iptal',
+) {
   await asMember(actorOf(v), async (tx) => {
     await tx`update event_invitees set status = ${status} where event_id = ${eventId} and member_id = ${memberId}`;
-    await audit(tx, status === 'iptal' ? 'invitee.cancel' : 'invitee.restore', 'event', eventId, { member: memberId });
+    await audit(tx, status === 'iptal' ? 'invitee.cancel' : 'invitee.restore', 'event', eventId, {
+      member: memberId,
+    });
   });
 }
 
@@ -486,7 +562,8 @@ export async function updateMember(
   input: { display_name: string; email: string | null; role: DeskMember['role'] },
 ): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
-    const rows = await tx`update members set display_name = ${input.display_name}, email = ${input.email}, role = ${input.role}
+    const rows =
+      await tx`update members set display_name = ${input.display_name}, email = ${input.email}, role = ${input.role}
                            where id = ${id} returning id`;
     if (!rows.length) throw new Error('not allowed');
     await audit(tx, 'member.update', 'member', id, { role: input.role });
@@ -508,7 +585,17 @@ export async function deleteMember(v: Viewer, id: string): Promise<void> {
 export async function auditLog(v: Viewer, limit = 200) {
   return asMember(
     actorOf(v),
-    (tx) => tx<{ id: number; at: Date; actor: string | null; action: string; target_type: string | null; target_id: string | null; meta: Record<string, unknown> }[]>`
+    (tx) => tx<
+      {
+        id: number;
+        at: Date;
+        actor: string | null;
+        action: string;
+        target_type: string | null;
+        target_id: string | null;
+        meta: Record<string, unknown>;
+      }[]
+    >`
       select a.id, a.at, m.display_name as actor, a.action, a.target_type, a.target_id, a.meta
         from audit_logs a left join members m on m.id = a.actor_id
        order by a.at desc limit ${limit}`,
@@ -518,7 +605,18 @@ export async function auditLog(v: Viewer, limit = 200) {
 export async function deliveries(v: Viewer, limit = 100) {
   return asMember(
     actorOf(v),
-    (tx) => tx<{ id: string; kind: string; status: string; channel: string; created_at: Date; sent_at: Date | null; error: string | null; member: string | null }[]>`
+    (tx) => tx<
+      {
+        id: string;
+        kind: string;
+        status: string;
+        channel: string;
+        created_at: Date;
+        sent_at: Date | null;
+        error: string | null;
+        member: string | null;
+      }[]
+    >`
       select d.id, d.kind, d.status, d.channel, d.created_at, d.sent_at, d.error, m.display_name as member
         from notification_deliveries d left join members m on m.id = d.member_id
        order by d.created_at desc limit ${limit}`,
@@ -545,4 +643,13 @@ export async function deskSummary(v: Viewer) {
              (select count(*)::int from resources where link_status = 'denetlenmedi' and url is not null) as unchecked`;
     return c!;
   });
+}
+
+// ─── moderation (owner/admin with MFA; enforced inside the SQL functions) ──
+export async function moderateContribution(v: Viewer, id: string, state: 'yayinda' | 'kaldirildi') {
+  await asMember(actorOf(v), (tx) => tx`select app.moderate_contribution(${id}, ${state})`);
+}
+
+export async function moderateJournal(v: Viewer, id: string, state: 'gorunur' | 'gizlendi') {
+  await asMember(actorOf(v), (tx) => tx`select app.moderate_journal(${id}, ${state})`);
 }

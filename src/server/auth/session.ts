@@ -24,4 +24,3 @@ export async function readSessionToken(): Promise<string | null> {
   const value = (await cookies()).get(SESSION_COOKIE)?.value;
   return value && value.length >= 40 && value.length <= 64 ? value : null;
 }
-

@@ -12,7 +12,11 @@ import { deskEvent, deskFilms } from '@/server/dal/desk';
 
 export const metadata: Metadata = { title: 'masa · gece' };
 
-const RSVP: Record<string, string> = { geliyorum: 'geliyorum', gelemiyorum: 'gelemiyorum', belirsiz: 'belli değil' };
+const RSVP: Record<string, string> = {
+  geliyorum: 'geliyorum',
+  gelemiyorum: 'gelemiyorum',
+  belirsiz: 'belli değil',
+};
 
 export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]'>) {
   const viewer = await requireAdmin();
@@ -67,7 +71,10 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
           {!priv?.location_text ? (
             <span className={`${styles.pill} ${styles.pillWarn}`}>konum girilmedi</span>
           ) : releasedNow ? (
-            <span className={`${styles.pill} ${styles.pillOk}`}>açık · {priv.release_audience === 'katilanlar' ? 'geliyorum diyenler' : 'tüm davetliler'}</span>
+            <span className={`${styles.pill} ${styles.pillOk}`}>
+              açık ·{' '}
+              {priv.release_audience === 'katilanlar' ? 'geliyorum diyenler' : 'tüm davetliler'}
+            </span>
           ) : effective ? (
             <span className={styles.pill}>zamanlandı · {formatShort(effective)}</span>
           ) : (
@@ -75,9 +82,9 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
           )}
         </p>
         <p className={ui.hint}>
-          konum yalnızca açılış zamanı geldiğinde ve yalnızca uygun davetlilere veritabanı fonksiyonu üzerinden verilir.
-          öncesinde sayfa, takvim dosyası, davetiye ve e-postada yer almaz. konum girilmeden açılırsa davetliler “konum
-          bilgisi henüz paylaşılmadı” görür.
+          konum yalnızca açılış zamanı geldiğinde ve yalnızca uygun davetlilere veritabanı
+          fonksiyonu üzerinden verilir. öncesinde sayfa, takvim dosyası, davetiye ve e-postada yer
+          almaz. konum girilmeden açılırsa davetliler “konum bilgisi henüz paylaşılmadı” görür.
         </p>
         {priv && (
           <LocationForm
@@ -103,7 +110,9 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
             <form action={releaseLocationAction}>
               <input type="hidden" name="eventId" value={event.id} />
               <input type="hidden" name="op" value="withdraw" />
-              <button className={`${ui.button} ${ui.small} ${ui.danger}`}>paylaşımı geri çek</button>
+              <button className={`${ui.button} ${ui.small} ${ui.danger}`}>
+                paylaşımı geri çek
+              </button>
             </form>
           )}
         </div>
@@ -112,7 +121,8 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
       <section className={styles.panel} aria-labelledby="davetliler">
         <h2 id="davetliler">davetliler</h2>
         <p className="meta">
-          {counts.davetli} davetli · {counts.geliyorum} geliyorum · {counts.gelemiyorum} gelemiyorum · {counts.bekleyen} yanıt bekleniyor
+          {counts.davetli} davetli · {counts.geliyorum} geliyorum · {counts.gelemiyorum} gelemiyorum
+          · {counts.bekleyen} yanıt bekleniyor
         </p>
         {invitees.length > 0 && (
           <div className={styles.tableWrap}>
@@ -130,16 +140,29 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
                   <tr key={i.member_id}>
                     <td>
                       {i.display_name}
-                      {i.member_status !== 'active' && <span className="meta"> · {i.member_status === 'invited' ? 'henüz girmedi' : 'iptal'}</span>}
+                      {i.member_status !== 'active' && (
+                        <span className="meta">
+                          {' '}
+                          · {i.member_status === 'invited' ? 'henüz girmedi' : 'iptal'}
+                        </span>
+                      )}
                     </td>
-                    <td>{i.status === 'iptal' ? 'davet geri alındı' : i.rsvp ? RSVP[i.rsvp] : '—'}</td>
+                    <td>
+                      {i.status === 'iptal' ? 'davet geri alındı' : i.rsvp ? RSVP[i.rsvp] : '—'}
+                    </td>
                     <td>{i.rsvp_note ?? ''}</td>
                     <td>
                       <form action={inviteesAction}>
                         <input type="hidden" name="eventId" value={event.id} />
                         <input type="hidden" name="memberId" value={i.member_id} />
-                        <input type="hidden" name="op" value={i.status === 'davetli' ? 'cancel' : 'restore'} />
-                        <button className={styles.tool}>{i.status === 'davetli' ? 'daveti geri al' : 'yeniden davet et'}</button>
+                        <input
+                          type="hidden"
+                          name="op"
+                          value={i.status === 'davetli' ? 'cancel' : 'restore'}
+                        />
+                        <button className={styles.tool}>
+                          {i.status === 'davetli' ? 'daveti geri al' : 'yeniden davet et'}
+                        </button>
                       </form>
                     </td>
                   </tr>
@@ -177,8 +200,8 @@ export default async function DeskEventPage(props: PageProps<'/masa/geceler/[id]
       <section className={styles.panel} aria-labelledby="bildirim">
         <h2 id="bildirim">bildirimler</h2>
         <p className={ui.hint}>
-          elle tetiklenir. e-posta sağlayıcısı tanımlı değilse hiçbir şey gönderilmez ve her kişi için “sağlayıcı yok”
-          kaydı düşülür; bu durumda konumu davetlilere kendin iletmelisin.
+          elle tetiklenir. e-posta sağlayıcısı tanımlı değilse hiçbir şey gönderilmez ve her kişi
+          için “sağlayıcı yok” kaydı düşülür; bu durumda konumu davetlilere kendin iletmelisin.
         </p>
         <NotifyForm eventId={event.id} kind="konum" label="konum açıldı bildirimi gönder" />
         <NotifyForm eventId={event.id} kind="hatirlatma" label="hatırlatma gönder" />

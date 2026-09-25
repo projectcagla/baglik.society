@@ -24,7 +24,8 @@ export function parseBlocks(src: string | null | undefined): Block[] {
     .filter(Boolean)
     .map((chunk): Block => {
       if (chunk.startsWith('## ')) return { type: 'h', text: chunk.slice(3).trim() };
-      if (chunk.startsWith('> ')) return { type: 'quote', text: chunk.replace(/^>\s?/gm, '').trim() };
+      if (chunk.startsWith('> '))
+        return { type: 'quote', text: chunk.replace(/^>\s?/gm, '').trim() };
       if (chunk.startsWith('? ')) return { type: 'question', text: chunk.slice(2).trim() };
       return { type: 'p', text: chunk };
     });
@@ -72,7 +73,13 @@ export function renderInline(text: string): ReactNode[] {
   return out;
 }
 
-export function RichText({ source, className }: { source: string | null | undefined; className?: string }) {
+export function RichText({
+  source,
+  className,
+}: {
+  source: string | null | undefined;
+  className?: string;
+}) {
   const blocks = parseBlocks(source);
   if (!blocks.length) return null;
   return (

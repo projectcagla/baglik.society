@@ -23,18 +23,30 @@ export function roleOptions(isOwner: boolean) {
   return isOwner ? ([...base, ['admin', 'yönetici'], ['owner', 'kurucu']] as const) : base;
 }
 
-export function CreateMemberForm({ isOwner, nextEvent }: { isOwner: boolean; nextEvent: { id: string; label: string } | null }) {
+export function CreateMemberForm({
+  isOwner,
+  nextEvent,
+}: {
+  isOwner: boolean;
+  nextEvent: { id: string; label: string } | null;
+}) {
   const [state, action, pending] = useActionState(createMemberAction, initial);
   return (
     <form action={action} className={styles.grid}>
       <div className={styles.cols3}>
         <Text name="display_name" label="ad" required />
-        <Text name="email" type="email" label="e-posta (isteğe bağlı)" hint="kod kurtarma ve bildirimler için" />
+        <Text
+          name="email"
+          type="email"
+          label="e-posta (isteğe bağlı)"
+          hint="kod kurtarma ve bildirimler için"
+        />
         <Select name="role" label="rol" options={roleOptions(isOwner)} defaultValue="member" />
       </div>
       {nextEvent && (
         <label className={ui.check}>
-          <input type="checkbox" name="inviteTo" value={nextEvent.id} defaultChecked /> {nextEvent.label} için davet et
+          <input type="checkbox" name="inviteTo" value={nextEvent.id} defaultChecked />{' '}
+          {nextEvent.label} için davet et
         </label>
       )}
       <div className={ui.row}>
@@ -47,14 +59,24 @@ export function CreateMemberForm({ isOwner, nextEvent }: { isOwner: boolean; nex
   );
 }
 
-export function ImportMembersForm({ nextEvent }: { nextEvent: { id: string; label: string } | null }) {
+export function ImportMembersForm({
+  nextEvent,
+}: {
+  nextEvent: { id: string; label: string } | null;
+}) {
   const [state, action, pending] = useActionState(importMembersAction, initial);
   return (
     <form action={action} className={styles.grid}>
-      <Area name="lines" label="her satıra bir kişi: ad, e-posta" rows={5} hint="e-posta isteğe bağlı. en fazla 50 satır." />
+      <Area
+        name="lines"
+        label="her satıra bir kişi: ad, e-posta"
+        rows={5}
+        hint="e-posta isteğe bağlı. en fazla 50 satır."
+      />
       {nextEvent && (
         <label className={ui.check}>
-          <input type="checkbox" name="inviteTo" value={nextEvent.id} /> hepsini {nextEvent.label} için davet et
+          <input type="checkbox" name="inviteTo" value={nextEvent.id} /> hepsini {nextEvent.label}{' '}
+          için davet et
         </label>
       )}
       <div className={ui.row}>
@@ -88,7 +110,12 @@ export function EditMemberForm({
             <p className={ui.hint}>rolü yalnızca kurucu değiştirebilir.</p>
           </>
         ) : (
-          <Select name="role" label="rol" options={roleOptions(isOwner)} defaultValue={member.role} />
+          <Select
+            name="role"
+            label="rol"
+            options={roleOptions(isOwner)}
+            defaultValue={member.role}
+          />
         )}
       </div>
       <div className={ui.row}>
@@ -101,7 +128,19 @@ export function EditMemberForm({
   );
 }
 
-export function MemberOp({ id, op, label, danger, confirm }: { id: string; op: string; label: string; danger?: boolean; confirm?: boolean }) {
+export function MemberOp({
+  id,
+  op,
+  label,
+  danger,
+  confirm,
+}: {
+  id: string;
+  op: string;
+  label: string;
+  danger?: boolean;
+  confirm?: boolean;
+}) {
   const [state, action, pending] = useActionState(memberOpAction, initial);
   return (
     <form action={action} className={styles.grid}>
@@ -109,9 +148,19 @@ export function MemberOp({ id, op, label, danger, confirm }: { id: string; op: s
       <input type="hidden" name="op" value={op} />
       <div className={ui.row}>
         {confirm && (
-          <input name="confirm" className={ui.input} placeholder="onay için: sil" aria-label="onay için sil yaz" style={{ maxWidth: '10rem' }} />
+          <input
+            name="confirm"
+            className={ui.input}
+            placeholder="onay için: sil"
+            aria-label="onay için sil yaz"
+            style={{ maxWidth: '10rem' }}
+          />
         )}
-        <button type="submit" className={`${ui.button} ${ui.small} ${danger ? ui.danger : ''}`} disabled={pending}>
+        <button
+          type="submit"
+          className={`${ui.button} ${ui.small} ${danger ? ui.danger : ''}`}
+          disabled={pending}
+        >
           {pending ? 'bekle' : label}
         </button>
       </div>

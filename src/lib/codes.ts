@@ -19,7 +19,11 @@ export function randomSymbols(n: number): string {
 
 export function generateCode(): { code: string; selector: string; verifier: string } {
   const raw = randomSymbols(CODE_LEN);
-  return { code: formatCode(raw), selector: raw.slice(0, SELECTOR_LEN), verifier: raw.slice(SELECTOR_LEN) };
+  return {
+    code: formatCode(raw),
+    selector: raw.slice(0, SELECTOR_LEN),
+    verifier: raw.slice(SELECTOR_LEN),
+  };
 }
 
 export function formatCode(raw: string): string {

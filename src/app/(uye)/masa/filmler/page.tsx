@@ -40,13 +40,24 @@ export default async function DeskFilms() {
                 </td>
                 <td>{FILM_STATUS_LABELS[f.status]}</td>
                 <td>
-                  <span className={`${styles.pill} ${f.published_at ? styles.pillOk : styles.pillWarn}`}>{f.published_at ? 'film yayında' : 'taslak'}</span>{' '}
-                  <span className={`${styles.pill} ${f.after_published_at ? styles.pillOk : ''}`}>{f.after_published_at ? 'sonrası açık' : 'sonrası kapalı'}</span>
+                  <span
+                    className={`${styles.pill} ${f.published_at ? styles.pillOk : styles.pillWarn}`}
+                  >
+                    {f.published_at ? 'film yayında' : 'taslak'}
+                  </span>{' '}
+                  <span className={`${styles.pill} ${f.after_published_at ? styles.pillOk : ''}`}>
+                    {f.after_published_at ? 'sonrası açık' : 'sonrası kapalı'}
+                  </span>
                 </td>
                 <td>
                   {f.resource_count}
                   {f.draft_count > 0 && <span className="meta"> · {f.draft_count} taslak</span>}
-                  {f.broken_count > 0 && <span className={`${styles.pill} ${styles.pillBad}`}> {f.broken_count} sorunlu</span>}
+                  {f.broken_count > 0 && (
+                    <span className={`${styles.pill} ${styles.pillBad}`}>
+                      {' '}
+                      {f.broken_count} sorunlu
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

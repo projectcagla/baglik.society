@@ -11,7 +11,15 @@ const initial: KeyState = { code: null, message: null };
  * revealed key has username + new-password fields so browser password
  * managers offer to save it.
  */
-export function KeyCreator({ hasKey, account, next }: { hasKey: boolean; account: string; next?: string }) {
+export function KeyCreator({
+  hasKey,
+  account,
+  next,
+}: {
+  hasKey: boolean;
+  account: string;
+  next?: string;
+}) {
   const [state, action, pending] = useActionState(createKeyAction, initial);
   const [copied, setCopied] = useState(false);
 
@@ -26,7 +34,14 @@ export function KeyCreator({ hasKey, account, next }: { hasKey: boolean; account
         }}
       >
         <p className={ui.label}>kişisel anahtarın — yalnızca şimdi gösteriliyor:</p>
-        <input type="text" name="username" autoComplete="username" value={account} readOnly hidden />
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={account}
+          readOnly
+          hidden
+        />
         <output className={ui.code} aria-live="polite">
           {state.code}
         </output>
@@ -60,8 +75,8 @@ export function KeyCreator({ hasKey, account, next }: { hasKey: boolean; account
           </button>
         </div>
         <p className={ui.hint}>
-          bir parola yöneticisine ya da güvendiğin bir yere kaydet. bu anahtar yeniden gösterilmez; kaybedersen yenisini
-          oluşturabilir ya da e-postanla tek kullanımlık kod isteyebilirsin.
+          bir parola yöneticisine ya da güvendiğin bir yere kaydet. bu anahtar yeniden gösterilmez;
+          kaybedersen yenisini oluşturabilir ya da e-postanla tek kullanımlık kod isteyebilirsin.
         </p>
       </form>
     );

@@ -29,7 +29,8 @@ describe('calendar file', () => {
   it('escapes and folds per RFC 5545', () => {
     expect(escapeText('a;b,c\nd')).toBe(String.raw`a\;b\,c\nd`);
     const long = 'DESCRIPTION:' + 'ğ'.repeat(80);
-    for (const line of fold(long).split('\r\n')) expect(Buffer.byteLength(line)).toBeLessThanOrEqual(75);
+    for (const line of fold(long).split('\r\n'))
+      expect(Buffer.byteLength(line)).toBeLessThanOrEqual(75);
   });
 });
 

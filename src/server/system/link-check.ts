@@ -19,7 +19,12 @@ export interface LinkResult {
 
 const UA = 'baglik-society-linkcheck/1.0 (+private film club; checks saved source links weekly)';
 
-export function classify(httpStatus: number | null, requested: string, finalUrl: string | null, error: string | null): LinkStatus {
+export function classify(
+  httpStatus: number | null,
+  requested: string,
+  finalUrl: string | null,
+  error: string | null,
+): LinkStatus {
   if (error || httpStatus === null) return 'hata';
   if (httpStatus === 404 || httpStatus === 410) return 'kirik';
   if (httpStatus >= 200 && httpStatus < 400) {
@@ -36,7 +41,11 @@ export async function probe(url: string, fetchImpl: typeof fetch = fetch): Promi
     fetchImpl(url, {
       method,
       redirect: 'follow',
-      headers: { 'User-Agent': UA, Accept: 'text/html,*/*;q=0.5', ...(method === 'GET' ? { Range: 'bytes=0-2047' } : {}) },
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,*/*;q=0.5',
+        ...(method === 'GET' ? { Range: 'bytes=0-2047' } : {}),
+      },
       signal: AbortSignal.timeout(8000),
     });
   try {
@@ -44,21 +53,39 @@ export async function probe(url: string, fetchImpl: typeof fetch = fetch): Promi
     if ([403, 405, 501].includes(res.status)) res = await attempt('GET');
     await res.body?.cancel().catch(() => {});
     const status = classify(res.status, url, res.url || null, null);
-    return { ok: status === 'saglam' || status === 'yonlendirme', status, httpStatus: res.status, finalUrl: res.url || null, error: null, durationMs: Date.now() - started };
+    return {
+      ok: status === 'saglam' || status === 'yonlendirme',
+      status,
+      httpStatus: res.status,
+      finalUrl: res.url || null,
+      error: null,
+      durationMs: Date.now() - started,
+    };
   } catch (err) {
     const name = err instanceof Error ? err.name : 'error';
-    return { ok: false, status: 'hata', httpStatus: null, finalUrl: null, error: name === 'TimeoutError' ? 'zaman aşımı' : name, durationMs: Date.now() - started };
+    return {
+      ok: false,
+      status: 'hata',
+      httpStatus: null,
+      finalUrl: null,
+      error: name === 'TimeoutError' ? 'zaman aşımı' : name,
+      durationMs: Date.now() - started,
+    };
   }
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function checkLinks(opts: { ids?: string[]; limit?: number; staleHours?: number } = {}): Promise<number> {
+export async function checkLinks(
+  opts: { ids?: string[]; limit?: number; staleHours?: number } = {},
+): Promise<number> {
   const limit = Math.min(opts.limit ?? 20, 50);
   const stale = opts.staleHours ?? 24 * 6;
   const rows = await asSystem((tx) =>
     opts.ids?.length
-      ? tx<{ id: string; url: string }[]>`select id, url from resources where id = any(${opts.ids}) and url is not null limit ${limit}`
+      ? tx<
+          { id: string; url: string }[]
+        >`select id, url from resources where id = any(${opts.ids}) and url is not null limit ${limit}`
       : tx<{ id: string; url: string }[]>`
           select id, url from resources
            where url is not null and (link_checked_at is null or link_checked_at < now() - make_interval(hours => ${stale}))

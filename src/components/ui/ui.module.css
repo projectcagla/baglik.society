@@ -15,7 +15,10 @@
   letter-spacing: 0.04em;
   text-decoration: none;
   white-space: nowrap;
-  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
 }
 
 .button:hover:not(:disabled) {
@@ -136,9 +139,12 @@
 
 .select {
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
     linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
-  background-position: calc(100% - 1.1rem) 55%, calc(100% - 0.8rem) 55%;
+  background-position:
+    calc(100% - 1.1rem) 55%,
+    calc(100% - 0.8rem) 55%;
   background-size: 0.3rem 0.3rem;
   background-repeat: no-repeat;
   padding-right: 2rem;
@@ -207,7 +213,9 @@
   border-radius: 999px;
   font-size: 0.9375rem;
   cursor: pointer;
-  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 
 .segmented input {

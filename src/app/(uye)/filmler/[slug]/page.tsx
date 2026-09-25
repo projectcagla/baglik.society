@@ -34,7 +34,13 @@ export default async function FilmPage(props: PageProps<'/filmler/[slug]'>) {
 
   return (
     <div className={ed.page}>
-      <FilmHeader film={film} layer="once" afterVisible={afterVisible} staff={viewer.isStaff} preview={preview} />
+      <FilmHeader
+        film={film}
+        layer="once"
+        afterVisible={afterVisible}
+        staff={viewer.isStaff}
+        preview={preview}
+      />
 
       <div className={styles.twoCol}>
         <div className={ed.section}>
@@ -62,7 +68,11 @@ export default async function FilmPage(props: PageProps<'/filmler/[slug]'>) {
                         <span className={styles.n}>{String(n).padStart(2, '0')}</span>
                         <span>
                           <strong>{r.heading ?? r.title_original}</strong>
-                          <small>{[r.publication, r.author, r.form_label && brandLower(r.form_label)].filter(Boolean).join(' · ')}</small>
+                          <small>
+                            {[r.publication, r.author, r.form_label && brandLower(r.form_label)]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </small>
                         </span>
                       </Link>
                     </li>
@@ -74,7 +84,10 @@ export default async function FilmPage(props: PageProps<'/filmler/[slug]'>) {
 
           {before.length > 0 && (
             <p>
-              <Link href={`/filmler/${film.slug}/okuma${q}`} className={`${ui.button} ${ui.primary}`}>
+              <Link
+                href={`/filmler/${film.slug}/okuma${q}`}
+                className={`${ui.button} ${ui.primary}`}
+              >
                 okuma odasına gir <span aria-hidden="true">→</span>
               </Link>
             </p>

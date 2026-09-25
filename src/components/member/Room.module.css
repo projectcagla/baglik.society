@@ -162,3 +162,7 @@
   justify-items: center;
   max-width: 30rem;
 }
+
+.nowrap {
+  white-space: nowrap;
+}

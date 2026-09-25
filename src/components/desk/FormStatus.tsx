@@ -5,7 +5,11 @@ import type { DeskState } from '@/server/actions/desk';
 export function FormStatus({ state }: { state: DeskState }) {
   return (
     <>
-      <p className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`} role="status" aria-live="polite">
+      <p
+        className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`}
+        role="status"
+        aria-live="polite"
+      >
         {state.message}
       </p>
       {state.secrets && state.secrets.length > 0 && (

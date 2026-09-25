@@ -16,7 +16,9 @@ export function MfaSetup({ enrolled, returnTo }: { enrolled: boolean; returnTo: 
     <div className={styles.grid}>
       {!enrolled && !setup?.secret && (
         <div className={styles.grid}>
-          <p>bir doğrulama uygulamasıyla (ör. 1password, google authenticator, aegis) kurulum yap.</p>
+          <p>
+            bir doğrulama uygulamasıyla (ör. 1password, google authenticator, aegis) kurulum yap.
+          </p>
           <p>
             <button
               type="button"

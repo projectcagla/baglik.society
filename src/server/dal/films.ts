@@ -113,29 +113,36 @@ export interface FilmDetail {
  * if Postgres agrees it is published (resources/questions/notes policies);
  * `afterVisible` is informational, not the gate.
  */
-export async function getFilm(v: Viewer, slug: string, opts: { asMemberPreview?: boolean } = {}): Promise<FilmDetail | null> {
+export async function getFilm(
+  v: Viewer,
+  slug: string,
+  opts: { asMemberPreview?: boolean } = {},
+): Promise<FilmDetail | null> {
   return asMember(actorOf(v), async (tx) => {
     const [film] = await tx<FilmRow[]>`select * from films where slug = ${slug}`;
     if (!film) return null;
     const published = (s: string) => !opts.asMemberPreview || s === 'yayinda';
-    const resources = (await tx<ResourceRow[]>`
+    const resources = (
+      await tx<ResourceRow[]>`
       select * from resources where film_id = ${film.id}
-       order by layer, case section when 'okuma' then 0 when 'izleme' then 1 else 2 end, position, created_at`).filter((r) =>
-      published(r.status),
-    );
-    const questions = (await tx<QuestionRow[]>`
-      select * from questions where film_id = ${film.id} order by layer, position, created_at`).filter((q) =>
-      published(q.status),
-    );
-    const notes = (await tx<NoteRow[]>`
+       order by layer, case section when 'okuma' then 0 when 'izleme' then 1 else 2 end, position, created_at`
+    ).filter((r) => published(r.status));
+    const questions = (
+      await tx<QuestionRow[]>`
+      select * from questions where film_id = ${film.id} order by layer, position, created_at`
+    ).filter((q) => published(q.status));
+    const notes = (
+      await tx<NoteRow[]>`
       select id, title, body, author_credit, status, published_at from screening_notes
-       where film_id = ${film.id} order by coalesce(published_at, created_at)`).filter((n) => published(n.status));
+       where film_id = ${film.id} order by coalesce(published_at, created_at)`
+    ).filter((n) => published(n.status));
     const events = await tx<{ number: number | null; starts_at: Date; status: string }[]>`
       select e.number, e.starts_at, e.status from events e
         join event_films ef on ef.event_id = e.id
        where ef.film_id = ${film.id} and e.status <> 'taslak'
        order by e.starts_at`;
-    const afterVisible = !!film.after_published_at && film.after_published_at.getTime() <= Date.now();
+    const afterVisible =
+      !!film.after_published_at && film.after_published_at.getTime() <= Date.now();
     const showAfter = afterVisible || (v.isStaff && !opts.asMemberPreview);
     return {
       film,
@@ -166,7 +173,12 @@ export async function getMarks(v: Viewer, filmId: string): Promise<Map<string, R
   return new Map(rows.map((r) => [r.resource_id, r]));
 }
 
-export async function setMark(v: Viewer, resourceId: string, field: 'read' | 'saved', on: boolean): Promise<void> {
+export async function setMark(
+  v: Viewer,
+  resourceId: string,
+  field: 'read' | 'saved',
+  on: boolean,
+): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     const visible = await tx`select 1 from resources where id = ${resourceId}`;
     if (!visible.length) throw new Error('not found');
@@ -212,7 +224,9 @@ export async function listSaved(v: Viewer): Promise<SavedItem[]> {
 export async function latestPublishedResource(v: Viewer) {
   const [row] = await asMember(
     actorOf(v),
-    (tx) => tx<(ResourceRow & { film_slug: string; film_title: string; program_no: number | null })[]>`
+    (tx) => tx<
+      (ResourceRow & { film_slug: string; film_title: string; program_no: number | null })[]
+    >`
       select r.*, f.slug as film_slug, f.title as film_title, f.program_no
         from resources r join films f on f.id = r.film_id
        where r.status = 'yayinda'

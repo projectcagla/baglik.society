@@ -40,8 +40,16 @@ export async function deliver(input: MailInput): Promise<DeliveryStatus> {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${e.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: e.MAIL_FROM, to: [input.to], subject: input.subject, text: input.text }),
+        headers: {
+          Authorization: `Bearer ${e.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: e.MAIL_FROM,
+          to: [input.to],
+          subject: input.subject,
+          text: input.text,
+        }),
         signal: AbortSignal.timeout(10_000),
       });
       if (res.ok) {

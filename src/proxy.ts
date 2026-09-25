@@ -6,7 +6,14 @@ import { safeReturnPath } from '@/lib/return-path';
 // a session cookie it redirects to the door, whether or not the page exists,
 // so URL guessing tells nothing. Real authorisation happens server-side (DAL
 // + Postgres RLS); this is only the first, cheap filter.
-const PUBLIC_EXACT = new Set(['/', '/kayip-anahtar', '/robots.txt', '/manifest.webmanifest', '/icon.svg', '/apple-icon.png']);
+const PUBLIC_EXACT = new Set([
+  '/',
+  '/kayip-anahtar',
+  '/robots.txt',
+  '/manifest.webmanifest',
+  '/icon.svg',
+  '/apple-icon.png',
+]);
 const PUBLIC_PREFIX = ['/_next/', '/brand/', '/fonts/', '/api/cron/'];
 
 function isPublic(pathname: string) {
@@ -16,11 +23,16 @@ function isPublic(pathname: string) {
 function securityHeaders(res: NextResponse, csp: string) {
   res.headers.set('Content-Security-Policy', csp);
   res.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet, noimageindex');
-  res.headers.set('Referrer-Policy', 'no-referrer');
+  // same-origin: outbound links send no referrer, while same-site form posts keep
+  // their Origin header (no-referrer makes it "null" and breaks no-JS forms)
+  res.headers.set('Referrer-Policy', 'same-origin');
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), browsing-topics=()');
+  res.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), browsing-topics=()',
+  );
   if (process.env.NODE_ENV === 'production') {
     res.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
   }

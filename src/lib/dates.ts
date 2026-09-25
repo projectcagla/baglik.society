@@ -5,7 +5,9 @@ export const TZ = 'Europe/Istanbul';
 
 function parts(date: Date, opts: Intl.DateTimeFormatOptions) {
   return Object.fromEntries(
-    new Intl.DateTimeFormat('tr-TR', { timeZone: TZ, ...opts }).formatToParts(date).map((p) => [p.type, p.value]),
+    new Intl.DateTimeFormat('tr-TR', { timeZone: TZ, ...opts })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value]),
   ) as Record<string, string>;
 }
 
@@ -33,13 +35,28 @@ export function formatEventDate(date: Date): string {
 
 /** "27.09.2026 19.30" for compact admin tables */
 export function formatShort(date: Date): string {
-  const p = parts(date, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const p = parts(date, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
   return `${p.day}.${p.month}.${p.year} ${p.hour}.${p.minute}`;
 }
 
 /** Offset of Istanbul from UTC at a given instant, in minutes. */
 function offsetMinutes(at: Date): number {
-  const p = parts(at, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  const p = parts(at, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  });
   const asUtc = Date.UTC(+p.year!, +p.month! - 1, +p.day!, +p.hour!, +p.minute!, +p.second!);
   return Math.round((asUtc - at.getTime()) / 60000);
 }
@@ -57,7 +74,14 @@ export function istanbulLocalToDate(local: string): Date | null {
 /** UTC instant → "2026-09-27T19:30" for <input type="datetime-local">. */
 export function dateToIstanbulLocal(date: Date | null | undefined): string {
   if (!date) return '';
-  const p = parts(date, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const p = parts(date, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 }
 

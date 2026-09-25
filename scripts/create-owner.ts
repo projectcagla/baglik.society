@@ -6,7 +6,13 @@ import { issueInvite, INVITE_TTL_DAYS } from '@/server/auth/door';
 import { asSystem } from '@/server/db/system';
 import { closeDb } from '@/server/db/client';
 
-const { values } = parseArgs({ options: { name: { type: 'string' }, email: { type: 'string' }, role: { type: 'string', default: 'owner' } } });
+const { values } = parseArgs({
+  options: {
+    name: { type: 'string' },
+    email: { type: 'string' },
+    role: { type: 'string', default: 'owner' },
+  },
+});
 
 async function main() {
   const name = values.name?.trim();
@@ -14,7 +20,9 @@ async function main() {
   const role = values.role === 'admin' ? 'admin' : 'owner';
   const member = await asSystem(async (tx) => {
     const existing = values.email
-      ? await tx<{ id: string }[]>`select id from members where lower(email) = lower(${values.email})`
+      ? await tx<
+          { id: string }[]
+        >`select id from members where lower(email) = lower(${values.email})`
       : [];
     if (existing[0]) return existing[0];
     const [m] = await tx<{ id: string }[]>`

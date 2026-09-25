@@ -9,7 +9,11 @@ import { listEvents, type EventListItem } from '@/server/dal/events';
 
 export const metadata: Metadata = { title: 'geceler' };
 
-const RSVP: Record<string, string> = { geliyorum: 'geliyorum', gelemiyorum: 'gelemiyorum', belirsiz: 'belli değil' };
+const RSVP: Record<string, string> = {
+  geliyorum: 'geliyorum',
+  gelemiyorum: 'gelemiyorum',
+  belirsiz: 'belli değil',
+};
 const STATUS: Record<string, string> = { ertelendi: 'ertelendi', iptal: 'iptal', tamamlandi: '' };
 
 function Row({ e }: { e: EventListItem }) {
@@ -25,14 +29,26 @@ function Row({ e }: { e: EventListItem }) {
       </span>
     </>
   );
-  return <li>{e.number ? <Link href={`/geceler/${e.number}`} className={styles.row}>{inner}</Link> : <div className={styles.row}>{inner}</div>}</li>;
+  return (
+    <li>
+      {e.number ? (
+        <Link href={`/geceler/${e.number}`} className={styles.row}>
+          {inner}
+        </Link>
+      ) : (
+        <div className={styles.row}>{inner}</div>
+      )}
+    </li>
+  );
 }
 
 export default async function NightsPage() {
   const viewer = await requireMember();
   const events = await listEvents(viewer);
   const now = nowMs() - 6 * 3600 * 1000;
-  const upcoming = events.filter((e) => e.starts_at.getTime() >= now && e.status !== 'tamamlandi').reverse();
+  const upcoming = events
+    .filter((e) => e.starts_at.getTime() >= now && e.status !== 'tamamlandi')
+    .reverse();
   const past = events.filter((e) => e.starts_at.getTime() < now || e.status === 'tamamlandi');
 
   return (

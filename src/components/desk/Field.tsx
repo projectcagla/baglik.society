@@ -41,14 +41,30 @@ export function Text({
   );
 }
 
-export function Area({ name, label, hint, required, defaultValue, rows = 5, maxLength }: Common & { defaultValue?: string | null; rows?: number; maxLength?: number }) {
+export function Area({
+  name,
+  label,
+  hint,
+  required,
+  defaultValue,
+  rows = 5,
+  maxLength,
+}: Common & { defaultValue?: string | null; rows?: number; maxLength?: number }) {
   const id = `f-${name}`;
   return (
     <div className={ui.field}>
       <label htmlFor={id} className={ui.label}>
         {label}
       </label>
-      <textarea id={id} name={name} className={ui.textarea} defaultValue={defaultValue ?? ''} required={required} rows={rows} maxLength={maxLength} />
+      <textarea
+        id={id}
+        name={name}
+        className={ui.textarea}
+        defaultValue={defaultValue ?? ''}
+        required={required}
+        rows={rows}
+        maxLength={maxLength}
+      />
       {hint && <p className={ui.hint}>{hint}</p>}
     </div>
   );
@@ -67,7 +83,12 @@ export function Select({
       <label htmlFor={id} className={ui.label}>
         {label}
       </label>
-      <select id={id} name={name} className={ui.select} defaultValue={defaultValue ?? options[0]?.[0]}>
+      <select
+        id={id}
+        name={name}
+        className={ui.select}
+        defaultValue={defaultValue ?? options[0]?.[0]}
+      >
         {options.map(([v, l]) => (
           <option key={v} value={v}>
             {l}
@@ -79,7 +100,15 @@ export function Select({
   );
 }
 
-export function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked?: boolean }) {
+export function Check({
+  name,
+  label,
+  defaultChecked,
+}: {
+  name: string;
+  label: string;
+  defaultChecked?: boolean;
+}) {
   return (
     <label className={ui.check}>
       <input type="checkbox" name={name} value="1" defaultChecked={defaultChecked} /> {label}

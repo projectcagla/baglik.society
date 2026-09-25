@@ -19,12 +19,18 @@ const RSVP_TEXT: Record<string, string> = {
 export function EventHero({ view, variant }: { view: EventView; variant: 'room' | 'event' }) {
   const { event, films, invite, location } = view;
   const film = films[0];
-  const nightLabel = event.title ? brandLower(event.title) : event.number ? `${event.number}. film gecesi` : 'film gecesi';
+  const nightLabel = event.title
+    ? brandLower(event.title)
+    : event.number
+      ? `${event.number}. film gecesi`
+      : 'film gecesi';
   const Heading = variant === 'room' ? 'h1' : 'h1';
 
   return (
     <section className={styles.next} aria-labelledby="gece-baslik">
-      <p className={styles.kicker}>{variant === 'room' ? `sıradaki gece · ${nightLabel}` : nightLabel}</p>
+      <p className={styles.kicker}>
+        {variant === 'room' ? `sıradaki gece · ${nightLabel}` : nightLabel}
+      </p>
       {film && <p className={styles.no}>{programNo(film.program_no)}</p>}
       <Heading id="gece-baslik" className={styles.title}>
         {film ? brandLower(film.title) : nightLabel}
@@ -32,7 +38,11 @@ export function EventHero({ view, variant }: { view: EventView; variant: 'room' 
       {film?.director && <p className={styles.director}>{brandLower(film.director)}</p>}
       {films.length > 1 && (
         <p className={styles.director}>
-          + {films.slice(1).map((f) => brandLower(f.title)).join(', ')}
+          +{' '}
+          {films
+            .slice(1)
+            .map((f) => brandLower(f.title))
+            .join(', ')}
         </p>
       )}
       {(event.status === 'ertelendi' || event.status === 'iptal') && (
@@ -44,10 +54,15 @@ export function EventHero({ view, variant }: { view: EventView; variant: 'room' 
       <hr className={styles.rule} />
       <p className={styles.when}>
         <time dateTime={event.starts_at.toISOString()}>
-          {formatDay(event.starts_at)} · {formatWeekday(event.starts_at)} · {formatTime(event.starts_at)}
+          <span className={styles.nowrap}>{formatDay(event.starts_at)}</span> ·{' '}
+          <span className={styles.nowrap}>
+            {formatWeekday(event.starts_at)} · {formatTime(event.starts_at)}
+          </span>
         </time>
       </p>
-      {event.status !== 'iptal' && <p className={styles.relative}>{relativeDay(event.starts_at)}</p>}
+      {event.status !== 'iptal' && (
+        <p className={styles.relative}>{relativeDay(event.starts_at)}</p>
+      )}
       <hr className={styles.rule} />
       <LocationLine event={event} location={location} />
 

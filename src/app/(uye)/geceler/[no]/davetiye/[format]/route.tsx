@@ -11,7 +11,8 @@ const PRIVATE = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex
 export async function GET(req: Request, ctx: RouteContext<'/geceler/[no]/davetiye/[format]'>) {
   const viewer = await getViewer();
   const { no, format } = await ctx.params;
-  if (!viewer || !(format in FORMATS)) return new Response('Not found', { status: 404, headers: PRIVATE });
+  if (!viewer || !(format in FORMATS))
+    return new Response('Not found', { status: 404, headers: PRIVATE });
   const n = Number(no);
   const view = Number.isInteger(n) ? await getEventByNumber(viewer, n) : null;
   // exports are for invitees (and staff previewing), never for anyone else
@@ -35,6 +36,8 @@ export async function GET(req: Request, ctx: RouteContext<'/geceler/[no]/davetiy
     ...(download ? { 'Content-Disposition': `attachment; filename="${name}"` } : {}),
   };
   if (!asJpeg) return new Response(png.body, { headers });
-  const jpeg = await sharp(Buffer.from(await png.arrayBuffer())).jpeg({ quality: 90, mozjpeg: true }).toBuffer();
+  const jpeg = await sharp(Buffer.from(await png.arrayBuffer()))
+    .jpeg({ quality: 90, mozjpeg: true })
+    .toBuffer();
   return new Response(new Uint8Array(jpeg), { headers });
 }

@@ -16,7 +16,10 @@ import { makeMember } from '../support/fixtures';
 afterAll(closeDb);
 
 let ipCounter = 0;
-const ctx = () => ({ ip: `203.0.113.${++ipCounter}`, userAgent: 'Mozilla/5.0 (iPhone) Safari/605' });
+const ctx = () => ({
+  ip: `203.0.113.${++ipCounter}`,
+  userAgent: 'Mozilla/5.0 (iPhone) Safari/605',
+});
 
 describe('the door', () => {
   it('an invite code works exactly once, activates the member and opens a session', async () => {
@@ -47,7 +50,10 @@ describe('the door', () => {
     const wrong = key.slice(0, 5) + (key[5] === 'A' ? 'B' : 'A') + key.slice(6);
     const expiredMember = await makeMember('member', { status: 'invited' });
     const expired = await issueInvite(expiredMember.id, null);
-    await asSystem((tx) => tx`update private.credentials set expires_at = now() - interval '1 second' where member_id = ${expiredMember.id}`);
+    await asSystem(
+      (tx) =>
+        tx`update private.credentials set expires_at = now() - interval '1 second' where member_id = ${expiredMember.id}`,
+    );
     const revokedMember = await makeMember('member');
     const revokedKey = await rotatePersonalKey(revokedMember.id);
     const owner = await makeMember('owner');
@@ -70,7 +76,10 @@ describe('the door', () => {
   it('throttles repeated failures from one address', async () => {
     const ip = { ip: '198.51.100.77', userAgent: null };
     for (let i = 0; i < 10; i++) await enterWithCode('ZZZZ-ZZZZ-ZZZZ-ZZZ' + (i % 10), ip);
-    expect(await enterWithCode('ZZZZ-ZZZZ-ZZZZ-ZZZZ', ip)).toEqual({ ok: false, reason: 'throttled' });
+    expect(await enterWithCode('ZZZZ-ZZZZ-ZZZZ-ZZZZ', ip)).toEqual({
+      ok: false,
+      reason: 'throttled',
+    });
   });
 
   it('locks a selector after repeated wrong verifiers, even from many addresses', async () => {
@@ -79,15 +88,19 @@ describe('the door', () => {
     for (let i = 0; i < 8; i++) await enterWithCode(key.slice(0, 5) + 'ZZZZ-ZZZZ-ZZZ' + i, ctx());
     // the right key is now refused too (same generic answer)
     expect(await enterWithCode(key, ctx())).toEqual({ ok: false, reason: 'invalid' });
-    await asSystem((tx) => tx`delete from private.auth_attempts where bucket = ${'sel:' + key.slice(0, 4)}`);
+    await asSystem(
+      (tx) => tx`delete from private.auth_attempts where bucket = ${'sel:' + key.slice(0, 4)}`,
+    );
     expect((await enterWithCode(key, ctx())).ok).toBe(true);
   });
 
   it('stores codes only as Argon2id hashes', async () => {
     const m = await makeMember('member');
     const key = await rotatePersonalKey(m.id);
-    const [row] = await asSystem((tx) => tx<{ selector: string; verifier_hash: string }[]>`
-      select selector, verifier_hash from private.credentials where member_id = ${m.id} and revoked_at is null`);
+    const [row] = await asSystem(
+      (tx) => tx<{ selector: string; verifier_hash: string }[]>`
+      select selector, verifier_hash from private.credentials where member_id = ${m.id} and revoked_at is null`,
+    );
     expect(row!.verifier_hash).toMatch(/^\$argon2id\$/);
     expect(row!.verifier_hash).not.toContain(key.replace(/-/g, '').slice(4));
   });
@@ -110,15 +123,21 @@ describe('recovery', () => {
 describe('admin second factor', () => {
   it('enrols, verifies and refuses replays', async () => {
     const admin = await makeMember('admin');
-    const [s] = await asSystem((tx) => tx<{ id: string }[]>`
+    const [s] = await asSystem(
+      (tx) => tx<{ id: string }[]>`
       insert into private.sessions (member_id, token_hash, idle_expires_at, expires_at)
-      values (${admin.id}, ${Buffer.from(admin.id)}, now() + interval '1 day', now() + interval '1 day') returning id`);
+      values (${admin.id}, ${Buffer.from(admin.id)}, now() + interval '1 day', now() + interval '1 day') returning id`,
+    );
     const { secret } = await beginEnrollment(admin.id, admin.email!);
     const code = hotp(base32Decode(secret), currentStep());
-    expect(await verifyMfa(admin.id, s!.id, '000000' === code ? '111111' : '000000')).toBe('invalid');
+    expect(await verifyMfa(admin.id, s!.id, '000000' === code ? '111111' : '000000')).toBe(
+      'invalid',
+    );
     expect(await verifyMfa(admin.id, s!.id, code)).toBe('ok');
     expect(await verifyMfa(admin.id, s!.id, code)).toBe('invalid'); // replay
-    const [row] = await asSystem((tx) => tx`select mfa_verified_at from private.sessions where id = ${s!.id}`);
+    const [row] = await asSystem(
+      (tx) => tx`select mfa_verified_at from private.sessions where id = ${s!.id}`,
+    );
     expect(row?.mfa_verified_at).toBeInstanceOf(Date);
   });
 });

@@ -15,11 +15,17 @@ export interface IcsInput {
 }
 
 function utc(d: Date): string {
-  return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return d
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
 }
 
 export function escapeText(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/([,;])/g, '\\$1');
 }
 
 /** Folds lines at 75 octets as the RFC requires (UTF-8 aware). */

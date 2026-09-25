@@ -31,7 +31,12 @@ export function JournalForm({
         <label htmlFor={`${id}-film`} className={ui.label}>
           film
         </label>
-        <select id={`${id}-film`} name="filmId" className={ui.select} defaultValue={entry?.filmId ?? ''}>
+        <select
+          id={`${id}-film`}
+          name="filmId"
+          className={ui.select}
+          defaultValue={entry?.filmId ?? ''}
+        >
           <option value="">— film seçme —</option>
           {films.map((f) => (
             <option key={f.id} value={f.id}>
@@ -49,7 +54,13 @@ export function JournalForm({
             ['serbest', 'serbest'],
           ].map(([value, label]) => (
             <label key={value}>
-              <input type="radio" name="kind" value={value} defaultChecked={(entry?.kind ?? 'serbest') === value} /> {label}
+              <input
+                type="radio"
+                name="kind"
+                value={value}
+                defaultChecked={(entry?.kind ?? 'serbest') === value}
+              />{' '}
+              {label}
             </label>
           ))}
         </div>
@@ -58,13 +69,25 @@ export function JournalForm({
         <label htmlFor={`${id}-body`} className={ui.label}>
           not
         </label>
-        <textarea id={`${id}-body`} name="body" className={ui.textarea} rows={6} maxLength={5000} required defaultValue={entry?.body} />
+        <textarea
+          id={`${id}-body`}
+          name="body"
+          className={ui.textarea}
+          rows={6}
+          maxLength={5000}
+          required
+          defaultValue={entry?.body}
+        />
       </div>
       <div className={ui.row}>
         <button type="submit" className={`${ui.button} ${ui.primary}`} disabled={pending}>
           {pending ? 'bekle' : 'kaydet'}
         </button>
-        <p className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`} role="status" aria-live="polite">
+        <p
+          className={`${ui.status} ${state.ok ? ui.statusOk : state.message ? ui.statusBad : ''}`}
+          role="status"
+          aria-live="polite"
+        >
           {state.message}
         </p>
       </div>

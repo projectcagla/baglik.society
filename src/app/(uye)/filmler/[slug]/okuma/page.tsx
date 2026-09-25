@@ -11,7 +11,9 @@ import { brandLower, readingMinutes } from '@/lib/text';
 import { requireMember } from '@/server/auth/viewer';
 import { getFilm, getMarks } from '@/server/dal/films';
 
-export async function generateMetadata(props: PageProps<'/filmler/[slug]/okuma'>): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps<'/filmler/[slug]/okuma'>,
+): Promise<Metadata> {
   const viewer = await requireMember();
   const detail = await getFilm(viewer, (await props.params).slug);
   return { title: detail ? `okuma · ${brandLower(detail.film.title)}` : 'okuma' };
@@ -34,7 +36,13 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
 
   return (
     <div className={ed.page}>
-      <FilmHeader film={film} layer="okuma" afterVisible={afterVisible} staff={viewer.isStaff} preview={preview} />
+      <FilmHeader
+        film={film}
+        layer="okuma"
+        afterVisible={afterVisible}
+        staff={viewer.isStaff}
+        preview={preview}
+      />
 
       <div className={styles.room}>
         {total === 0 ? (
@@ -58,7 +66,14 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
             </nav>
 
             {main.map((r, i) => (
-              <ResourceEntry key={r.id} r={r} index={i + 1} total={total} mark={marks.get(r.id)} path={path} />
+              <ResourceEntry
+                key={r.id}
+                r={r}
+                index={i + 1}
+                total={total}
+                mark={marks.get(r.id)}
+                path={path}
+              />
             ))}
 
             {companions.length > 0 && (
@@ -88,7 +103,10 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
 
         <footer className={styles.footer}>
           {hasSummaries && (
-            <p>türkçe bölümler, bağlantı verilen yazılara dayanan özgün kısa özetlerdir; birebir çeviri değildir.</p>
+            <p>
+              türkçe bölümler, bağlantı verilen yazılara dayanan özgün kısa özetlerdir; birebir
+              çeviri değildir.
+            </p>
           )}
           {film.curator_credit && <p className="meta">seçki / {film.curator_credit}</p>}
           <div className={`${ui.row} no-print`}>

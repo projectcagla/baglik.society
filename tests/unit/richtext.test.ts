@@ -7,7 +7,12 @@ const html = (src: string) => renderToStaticMarkup(createElement(RichText, { sou
 
 describe('editorial rich text', () => {
   it('parses blocks', () => {
-    expect(parseBlocks('a\n\n## b\n\n> c\n\n? d').map((b) => b.type)).toEqual(['p', 'h', 'quote', 'question']);
+    expect(parseBlocks('a\n\n## b\n\n> c\n\n? d').map((b) => b.type)).toEqual([
+      'p',
+      'h',
+      'quote',
+      'question',
+    ]);
   });
 
   it('never emits HTML from the source', () => {
@@ -27,6 +32,8 @@ describe('editorial rich text', () => {
   });
 
   it('renders emphasis', () => {
-    expect(html('*italik* ve **kalın**')).toBe('<div><p><em>italik</em> ve <strong>kalın</strong></p></div>');
+    expect(html('*italik* ve **kalın**')).toBe(
+      '<div><p><em>italik</em> ve <strong>kalın</strong></p></div>',
+    );
   });
 });

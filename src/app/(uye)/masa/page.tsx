@@ -15,7 +15,8 @@ function reasons(q: QueueItem): [string, 'pillBad' | 'pillWarn' | ''][] {
   if (q.review_note) out.push(['açık soru', 'pillWarn']);
   if (q.link_status === 'kirik') out.push(['bağlantı kırık', 'pillBad']);
   if (q.link_status === 'hata') out.push(['bağlantı yanıtı belirsiz', 'pillWarn']);
-  if (!q.approved_at) out.push(['onay bekliyor', '']);
+  if (q.external && !q.approved_at)
+    out.push(q.status === 'yayinda' ? ['yayında ama onaysız', 'pillBad'] : ['onay bekliyor', '']);
   if (q.status === 'taslak') out.push(['taslak', '']);
   return out;
 }

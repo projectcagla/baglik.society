@@ -66,6 +66,7 @@ async function deskErrorCode(write: () => Promise<unknown>): Promise<DeskErrorCo
     if (m.includes('after layer requires a screening')) return 'sonra-erken';
     if (m.includes('resources_no_spoiler_before')) return 'spoiler-once';
     if (m.includes('publish checklist')) return 'eksik';
+    if (m.includes('publication requires human approval')) return 'onay';
     throw err;
   }
 }
@@ -74,6 +75,12 @@ function fail(err: unknown, fallback = 'kaydedilemedi.'): DeskState {
   const m = err instanceof Error ? err.message : '';
   if (m.includes('resources_no_spoiler_before'))
     return { ok: false, message: DESK_ERRORS['spoiler-once'] };
+  if (m.includes('publish checklist'))
+    return {
+      ok: false,
+      message:
+        'kaydedilmedi: yayındaki kaynak bu hâliyle yayın öncesi denetimden geçmiyor. önce taslağa al ya da eksik alanı doldur.',
+    };
   if (m.includes('duplicate key') && m.includes('slug'))
     return { ok: false, message: 'bu adres (slug) başka bir filmde kullanılıyor.' };
   if (m.includes('duplicate key') && m.includes('program_no'))
@@ -249,9 +256,10 @@ export async function saveResourceAction(_prev: DeskState, form: FormData): Prom
   const input = { ...parsed.data, position: parsed.data.position ?? 0 } as desk.ResourceInput;
   const id = form.get('id');
   let target: string;
+  let outcome: desk.UpdateOutcome | null = null;
   try {
     if (typeof id === 'string' && id) {
-      await desk.updateResource(v, uuid.parse(id), input);
+      outcome = await desk.updateResource(v, uuid.parse(id), input);
       target = id;
     } else {
       target = await desk.createResource(v, uuid.parse(form.get('filmId')), input);
@@ -261,6 +269,14 @@ export async function saveResourceAction(_prev: DeskState, form: FormData): Prom
   }
   revalidatePath('/', 'layout');
   if (!id) redirect(`/masa/kaynaklar/${target}?yeni=1`);
+  if (outcome?.returnedToDraft)
+    return {
+      ok: true,
+      message:
+        'kaydedildi. bağlantı ya da künye değiştiği için onay düştü ve kaynak taslağa döndü; yeniden kontrol edip yayımla.',
+    };
+  if (outcome?.approvalWithdrawn)
+    return { ok: true, message: 'kaydedildi. bağlantı ya da künye değişti; insan onayı düştü.' };
   return { ok: true, message: 'kaydedildi.' };
 }
 

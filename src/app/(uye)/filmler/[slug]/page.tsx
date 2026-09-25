@@ -65,7 +65,8 @@ export default async function FilmPage(props: PageProps<'/filmler/[slug]'>) {
               </h2>
               {before.length > 0 && (
                 <span className="meta">
-                  {before.length} kaynak · notlar yaklaşık {minutes} dk
+                  {before.filter((r) => r.section !== 'eslik').length} temel okuma · notlar yaklaşık{' '}
+                  {minutes} dk
                 </span>
               )}
             </div>

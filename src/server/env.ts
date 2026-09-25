@@ -12,6 +12,12 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM: z.string().optional(),
   CRON_SECRET: z.string().min(24).optional(),
+  /**
+   * One-time browser setup of the first owner (/kurulum). 32+ random chars.
+   * Only works while no owner exists; remove it after setup. A shorter value
+   * keeps setup closed (it must never take the whole app down).
+   */
+  SETUP_TOKEN: z.string().optional(),
   /** "off" keeps the link checker from making any outbound request (see ARCHITECTURE). */
   LINK_CHECK: z.enum(['on', 'off']).optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

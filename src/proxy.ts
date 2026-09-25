@@ -9,10 +9,12 @@ import { safeReturnPath } from '@/lib/return-path';
 const PUBLIC_EXACT = new Set([
   '/',
   '/kayip-anahtar',
+  '/kurulum',
   '/robots.txt',
   '/manifest.webmanifest',
   '/icon.svg',
   '/apple-icon.png',
+  '/api/health',
 ]);
 const PUBLIC_PREFIX = ['/_next/', '/brand/', '/fonts/', '/api/cron/'];
 

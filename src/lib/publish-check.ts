@@ -4,6 +4,9 @@
 
 export interface PublishFields {
   heading: string | null;
+  rationale: string | null;
+  section: 'okuma' | 'izleme' | 'eslik';
+  approved_at: Date | null;
   title_original: string | null;
   url: string | null;
   layer: 'once' | 'sonra';
@@ -14,7 +17,7 @@ export interface PublishFields {
 }
 
 export interface CheckItem {
-  key: 'baslik' | 'baglanti' | 'haklar' | 'not' | 'spoiler' | 'katman';
+  key: 'baslik' | 'baglanti' | 'haklar' | 'not' | 'gerekce' | 'spoiler' | 'katman' | 'onay';
   label: string;
   ok: boolean;
   fix: string;
@@ -57,6 +60,12 @@ export function publishChecklist(r: PublishFields): CheckItem[] {
       fix: '“özgün türkçe özet” seçiliyse kendi notunu yaz; yoksa hak durumunu “yalnızca bağlantı” yap.',
     },
     {
+      key: 'gerekce',
+      label: '“neden bu kaynak” (önce katmanının temel kaynakları)',
+      ok: r.layer !== 'once' || r.section === 'eslik' || !!r.rationale?.trim(),
+      fix: '2–3 cümleyle neden seçildiğini yaz ya da masadaki öneriyi gözden geçirip kullan.',
+    },
+    {
       key: 'spoiler',
       label: 'spoiler düzeyi açıkça seçildi',
       ok: r.spoiler_level !== 'belirtilmedi',
@@ -68,7 +77,17 @@ export function publishChecklist(r: PublishFields): CheckItem[] {
       ok: !(r.layer === 'once' && r.spoiler_level === 'var'),
       fix: 'spoiler içeren kaynak “sonra” katmanına taşınmalı.',
     },
+    {
+      key: 'onay',
+      label: 'künye ve bağlantı bir kişi tarafından kontrol edildi',
+      ok: !r.url || !!r.approved_at,
+      fix: 'özgün sayfayı aç; başlık, yazar, yayın ve tarihi karşılaştır, sonra “künyeyi ve bağlantıyı kontrol ettim” de. otomatik bağlantı denetimi bunun yerine geçmez.',
+    },
   ];
 }
+
+/** Everything except the human approval: what an edit of a published source must keep true. */
+export const contentReady = (r: PublishFields) =>
+  publishChecklist(r).every((c) => c.ok || c.key === 'onay');
 
 export const readyToPublish = (r: PublishFields) => publishChecklist(r).every((c) => c.ok);

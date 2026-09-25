@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { requestRecovery, RECOVERY_TTL_MIN } from '@/server/auth/door';
 import { requestContext } from '@/server/auth/viewer';
-import { deliver } from '@/server/system/mail';
+import { deliver, mailConfigured } from '@/server/system/mail';
 import { env } from '@/server/env';
 
 export interface RecoveryState {
@@ -15,6 +15,13 @@ const SAME_ANSWER =
   'istek alındı. adres bir üyeye aitse, yarım saat geçerli tek kullanımlık bir giriş kodu gönderilecek.';
 
 export async function recoveryAction(_prev: RecoveryState, form: FormData): Promise<RecoveryState> {
+  // no provider: issue nothing, promise nothing (the page already says so)
+  if (!mailConfigured()) {
+    return {
+      done: true,
+      message: 'bu kurulumda e-posta gönderimi açık değil. kulübün yöneticisine yaz.',
+    };
+  }
   const email = z.string().trim().email().max(200).safeParse(form.get('email'));
   if (!email.success) return { done: false, message: 'geçerli bir e-posta adresi yaz.' };
 

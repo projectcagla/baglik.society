@@ -63,6 +63,8 @@ export interface ResourceRow {
   provenance: string | null;
   approved_at: Date | null;
   review_note: string | null;
+  /** editor-only suggestion for `rationale`; never sent to members */
+  rationale_draft: string | null;
   link_reported_at: Date | null;
   link_report_count: number;
   updated_at: Date;
@@ -165,6 +167,7 @@ export async function getFilm(
       : resources.map((r) => ({
           ...r,
           review_note: null,
+          rationale_draft: null,
           link_report_count: 0,
           link_reported_at: null,
         }));

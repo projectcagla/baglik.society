@@ -80,8 +80,12 @@ test.describe.serial('authorisation matrix', () => {
       eventId = e!.id;
       await sql`insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status, status)
                 values (${filmId}, 'once', 'okuma', 'article', ${MARK.draft}, 'https://example.org/t', 'yok', 'baglanti', 'taslak')`;
-      await sql`insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status, status, published_at)
-                values (${filmId}, 'sonra', 'okuma', 'article', ${MARK.after}, 'https://example.org/s', 'var', 'baglanti', 'yayinda', now())`;
+      // published sources carry a person's approval (0004): sign as the test editor
+      await sql.begin(async (tx) => {
+        await tx`select set_config('app.member_id', ${state().editor.id}, true)`;
+        await tx`insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status, status, published_at, approved_at)
+                  values (${filmId}, 'sonra', 'okuma', 'article', ${MARK.after}, 'https://example.org/s', 'var', 'baglanti', 'yayinda', now(), now())`;
+      });
       await sql`insert into films (slug, title, status) values ('taslak-film-7q', ${MARK.film}, 'secildi')`;
       await sql`update event_private set location_text = ${MARK.place}, release_at = now() + interval '1 day'
                  where event_id = ${eventId}`;

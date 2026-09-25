@@ -32,6 +32,7 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
   const main = before.filter((r) => r.section !== 'eslik');
   const companions = before.filter((r) => r.section === 'eslik');
   const total = before.length;
+  const readCount = main.filter((r) => marks.get(r.id)?.read_at).length;
   // measured on what this page actually asks you to read: the curator's text
   const minutes = readingMinutes(
     before.map((r) => [r.rationale, r.note, r.prompt].filter(Boolean).join(' ')).join(' '),
@@ -57,14 +58,21 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
           <>
             <div className={styles.intro}>
               <p className={styles.introMeta}>
-                {total} kaynak · bu sayfadaki notlar yaklaşık {minutes} dk
+                {main.length} temel okuma
+                {companions.length > 0 && <> · {companions.length} eşlik eden</>} · bu sayfadaki
+                notlar yaklaşık {minutes} dk
                 {film.curator_credit && <> · seçki: {film.curator_credit}</>}
               </p>
+              {readCount > 0 && (
+                <p className={styles.introMeta}>
+                  okuduğun: {readCount} / {main.length}
+                </p>
+              )}
               <ReadingPlace storageKey={film.slug} />
             </div>
             <nav className={`${styles.contents} no-print`} aria-label="bu dosyada">
               <ol>
-                {before.map((r, i) => (
+                {main.map((r, i) => (
                   <li key={r.id}>
                     <a
                       href={`#${anchorOf(r)}`}
@@ -76,6 +84,17 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
                   </li>
                 ))}
               </ol>
+              {companions.length > 0 && (
+                <p className={styles.contentsMore}>
+                  <a href="#eslik">
+                    <span aria-hidden="true">+</span>
+                    <span>
+                      eşlik edenler · {companions.length}{' '}
+                      <span className={styles.contentsHint}>isteğe bağlı</span>
+                    </span>
+                  </a>
+                </p>
+              )}
             </nav>
 
             {main.map((r, i) => (
@@ -83,7 +102,7 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
                 key={r.id}
                 r={r}
                 index={i + 1}
-                total={total}
+                total={main.length}
                 mark={marks.get(r.id)}
                 path={path}
               />
@@ -92,7 +111,7 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
             {companions.length > 0 && (
               <section className={ed.section} aria-labelledby="eslik">
                 <hr className={styles.divider} />
-                <p className={ed.kicker}>bağlam / dinle / izle</p>
+                <p className={ed.kicker}>isteğe bağlı · bağlam / dinle / izle</p>
                 <h2 id="eslik" className={ed.h2}>
                   eşlik edenler
                 </h2>
@@ -101,8 +120,8 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
                     <ResourceEntry
                       key={r.id}
                       r={r}
-                      index={main.length + i + 1}
-                      total={total}
+                      index={i + 1}
+                      total={0}
                       mark={marks.get(r.id)}
                       path={path}
                       compact

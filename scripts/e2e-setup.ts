@@ -24,7 +24,7 @@ async function main() {
     ['member', 'deneme üye', 'uye@example.test', true],
     ['member', 'davetsiz üye', 'davetsiz@example.test', false],
   ] as const;
-  const out: Record<string, { id: string; key: string; name: string }> = {};
+  const out: Record<string, { id: string; key: string; name: string; totp?: string }> = {};
   for (const [role, name, email, invited] of people) {
     const id = await asSystem(async (tx) => {
       const [m] = await tx<{ id: string }[]>`
@@ -37,6 +37,31 @@ async function main() {
     const key = await rotatePersonalKey(id);
     out[invited ? role : 'outsider'] = { id, key, name };
   }
+  // a second (fake) admin whose authenticator is already set up, so journeys
+  // can pass the second factor without re-enrolling the owner
+  const { beginEnrollment } = await import('@/server/auth/mfa');
+  const adminId = await asSystem(async (tx) => {
+    const [m] = await tx<{ id: string }[]>`
+      insert into members (display_name, email, role, status, activated_at)
+      values ('deneme yönetici', 'yonetici@example.test', 'admin', 'active', now()) returning id`;
+    return m!.id;
+  });
+  const { secret } = await beginEnrollment(adminId, 'yonetici@example.test');
+  await asSystem(
+    (tx) => tx`update private.member_mfa set enabled_at = now() where member_id = ${adminId}`,
+  );
+  out.admin = {
+    id: adminId,
+    key: await rotatePersonalKey(adminId),
+    name: 'deneme yönetici',
+    totp: secret,
+  };
+
+  // the seed brings drafts; the (fake) editor approves and publishes Canavar
+  const { approveAndPublishForTests } = await import('../tests/support/publish-fixture');
+  const fx = postgres(url, { max: 1, onnotice: () => {} });
+  await approveAndPublishForTests(fx, out.editor!.id);
+  await fx.end();
   await closeDb();
   mkdirSync('artifacts', { recursive: true });
   writeFileSync('artifacts/e2e-state.json', JSON.stringify(out, null, 2));

@@ -3,7 +3,7 @@ import { asMember, type Tx } from '@/server/db/context';
 import { actorOf, type Viewer } from '@/server/auth/viewer';
 import type { FilmRow, NoteRow, QuestionRow, ResourceRow } from './films';
 import type { EventRow } from './events';
-import { readyToPublish } from '@/lib/publish-check';
+import { contentReady, readyToPublish } from '@/lib/publish-check';
 
 // Editor desk data. Everything runs as `baglik_app` under RLS: an editor
 // who reaches an admin function still gets nothing from Postgres.
@@ -145,15 +145,23 @@ export type ResourceInput = Omit<
   | 'approved_at'
   | 'link_reported_at'
   | 'link_report_count'
+  | 'rationale_draft'
 >;
 
 export async function deskResource(v: Viewer, id: string) {
   return asMember(actorOf(v), async (tx) => {
     const [r] = await tx<
-      (ResourceRow & { film_title: string; film_slug: string; program_no: number | null })[]
+      (ResourceRow & {
+        film_title: string;
+        film_slug: string;
+        program_no: number | null;
+        approver: string | null;
+      })[]
     >`
-      select r.*, f.title as film_title, f.slug as film_slug, f.program_no
-        from resources r join films f on f.id = r.film_id where r.id = ${id}`;
+      select r.*, f.title as film_title, f.slug as film_slug, f.program_no, a.display_name as approver
+        from resources r join films f on f.id = r.film_id
+        left join members a on a.id = r.approved_by
+       where r.id = ${id}`;
     if (!r) return null;
     const checks = await tx<
       {
@@ -187,38 +195,59 @@ export async function createResource(
 /** Fields a human confirmed when approving; changing any of them withdraws the approval. */
 const BIBLIOGRAPHY = ['url', 'title_original', 'author', 'publication', 'published_year'] as const;
 
-export async function updateResource(v: Viewer, id: string, input: ResourceInput): Promise<void> {
-  await asMember(actorOf(v), async (tx) => {
-    const [before] = await tx<
-      Pick<ResourceRow, (typeof BIBLIOGRAPHY)[number]>[]
-    >`select url, title_original, author, publication, published_year from resources where id = ${id}`;
+export interface UpdateOutcome {
+  /** the edit touched the link or bibliography, so the human approval was withdrawn */
+  approvalWithdrawn: boolean;
+  /** the source was published and, having lost its approval, went back to draft */
+  returnedToDraft: boolean;
+}
+
+export async function updateResource(
+  v: Viewer,
+  id: string,
+  input: ResourceInput,
+): Promise<UpdateOutcome> {
+  return asMember(actorOf(v), async (tx) => {
+    // the row is locked: a publish racing this edit sees the edited row, not the old one
+    const [before] = await tx<ResourceRow[]>`select * from resources where id = ${id} for update`;
     if (!before) throw new Error('not found');
     const urlChanged = before.url !== input.url;
     const bibChanged = BIBLIOGRAPHY.some((k) => (before[k] ?? null) !== (input[k] ?? null));
+    // a published source must stay publishable after the edit (approval aside:
+    // losing it sends the source back to draft, see 0004)
+    if (before.status === 'yayinda' && !contentReady({ ...before, ...input })) {
+      throw new Error('publish checklist');
+    }
     await tx`update resources set ${tx({ ...input, updated_by: v.id } as never)} where id = ${id}`;
     if (urlChanged) {
       await tx`update resources set link_status = 'denetlenmedi', link_checked_at = null, link_http_status = null,
                  link_final_url = null, link_error = null where id = ${id}`;
     }
-    if (bibChanged) {
-      await tx`update resources set approved_at = null, approved_by = null where id = ${id}`;
-    }
+    const [after] = await tx<
+      { status: string; approved_at: Date | null }[]
+    >`select status, approved_at from resources where id = ${id}`;
+    const outcome = {
+      approvalWithdrawn: bibChanged && !!before.approved_at,
+      returnedToDraft: before.status === 'yayinda' && after!.status !== 'yayinda',
+    };
     await audit(tx, 'resource.update', 'resource', id, {
       ...(urlChanged ? { url_changed: true } : {}),
-      ...(bibChanged ? { approval_withdrawn: true } : {}),
+      ...(outcome.approvalWithdrawn ? { approval_withdrawn: true } : {}),
+      ...(outcome.returnedToDraft ? { returned_to_draft: true } : {}),
     });
+    return outcome;
   });
 }
 
 /**
- * "I checked the bibliography and the link by hand." Records who and when,
- * and clears member link reports the editor has now looked at.
+ * "I checked the bibliography and the link by hand." Recorded as the signed-in
+ * person (the database sets approved_by, see 0004); clears the member link
+ * reports the editor has now looked at. An automatic link check never does this.
  */
 export async function approveResource(v: Viewer, id: string): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     const rows = await tx`
-      update resources set approved_at = now(), approved_by = ${v.id},
-             link_report_count = 0, link_reported_at = null
+      update resources set approved_at = now(), link_report_count = 0, link_reported_at = null
        where id = ${id} returning id`;
     if (!rows.length) throw new Error('not found');
     await audit(tx, 'resource.approve', 'resource', id);
@@ -228,9 +257,15 @@ export async function approveResource(v: Viewer, id: string): Promise<void> {
 export async function setResourceStatus(v: Viewer, id: string, publish: boolean): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
     if (publish) {
-      const [r] = await tx<ResourceRow[]>`select * from resources where id = ${id}`;
+      // locked: the checklist is evaluated on the row that will be published
+      const [r] = await tx<ResourceRow[]>`select * from resources where id = ${id} for update`;
       if (!r) throw new Error('not found');
-      if (!readyToPublish(r)) throw new Error('publish checklist');
+      if (!readyToPublish(r)) {
+        // only the person's check is missing: say exactly that
+        throw new Error(
+          contentReady(r) ? 'publication requires human approval' : 'publish checklist',
+        );
+      }
     }
     await tx`update resources set status = ${publish ? 'yayinda' : 'taslak'},
                published_at = ${publish ? tx`coalesce(published_at, now())` : null}, updated_by = ${v.id}
@@ -679,6 +714,7 @@ export interface QueueItem {
   link_report_count: number;
   link_status: string;
   approved_at: Date | null;
+  external: boolean;
   film_title: string;
   program_no: number | null;
 }
@@ -691,10 +727,11 @@ export async function deskQueue(v: Viewer): Promise<QueueItem[]> {
     actorOf(v),
     (tx) => tx<QueueItem[]>`
       select r.id, r.heading, r.title_original, r.status, r.review_note, r.link_report_count,
-             r.link_status, r.approved_at, f.title as film_title, f.program_no
+             r.link_status, r.approved_at, r.url is not null as external, f.title as film_title,
+             f.program_no
         from resources r join films f on f.id = r.film_id
        where r.review_note is not null or r.link_report_count > 0
-          or r.link_status in ('kirik', 'hata') or r.approved_at is null
+          or r.link_status in ('kirik', 'hata') or (r.url is not null and r.approved_at is null)
        order by (r.link_report_count > 0) desc, (r.review_note is not null) desc,
                 (r.link_status in ('kirik', 'hata')) desc, f.program_no desc nulls last, r.layer, r.position
        limit 60`,

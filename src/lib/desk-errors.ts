@@ -3,6 +3,7 @@ export const DESK_ERRORS = {
   'sonra-erken':
     'sonra katmanı ancak gösterimden sonra açılabilir: filmin durumunu “izlendi” yap ya da gecenin başlamasını bekle. başlangıç saati geçti diye kendiliğinden açılmaz; açmak her zaman senin kararın.',
   eksik: 'yayımlanmadı: aşağıdaki yayın öncesi denetimde eksik kalan maddeleri tamamla.',
+  onay: 'yayımlanmadı: künye ve bağlantı henüz bir kişi tarafından kontrol edilmedi. özgün sayfayı açıp karşılaştır, sonra “künyeyi ve bağlantıyı kontrol ettim” de.',
   'spoiler-once':
     'spoiler içeren bir kaynak “önce” katmanında yayımlanamaz. katmanını “sonra” yap ya da spoiler düzeyini gözden geçir.',
 } as const;

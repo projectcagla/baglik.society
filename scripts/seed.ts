@@ -1,6 +1,7 @@
 // Seeds the two real films, their editorial source records and film night 002.
 // Safe to re-run: existing films/events are left untouched (admins own them
 // after the first run). Creates no members — use `npm run owner:create`.
+// Sources arrive as drafts: publishing needs a person's approval (0004).
 import { events, films } from '../db/seed/content';
 import { scriptSql } from './lib/db';
 
@@ -28,21 +29,21 @@ export async function seed(url?: string, log = console.log) {
             insert into resources (film_id, layer, section, position, kind, heading, title_original, author,
               publication, form_label, language, published_year, duration_note, url, link_label, link_hint,
               access_note, spoiler_level, note, prompt, rights_status, status, published_at,
-              provenance, review_note)
+              provenance, review_note, rationale_draft)
             values (${film!.id}, ${r.layer}, ${r.section}, ${position}, ${r.kind}, ${r.heading ?? null},
               ${r.title_original ?? null}, ${r.author ?? null}, ${r.publication ?? null}, ${r.form_label ?? null},
               ${r.language ?? null}, ${r.published_year ?? null}, ${r.duration_note ?? null}, ${r.url},
               ${r.link_label ?? null}, ${r.link_hint ?? null}, ${r.access_note ?? null}, ${r.spoiler_level},
-              ${r.note ?? null}, ${r.prompt ?? null}, ${r.rights_status}, 'yayinda', now(),
-              ${`pdf: ${f.source_file}`}, ${r.review_note ?? null})`;
+              ${r.note ?? null}, ${r.prompt ?? null}, ${r.rights_status}, 'taslak', null,
+              ${`pdf: ${f.source_file}`}, ${r.review_note ?? null}, ${r.rationale_draft ?? null})`;
         }
         let qpos = 0;
         for (const q of f.questions) {
           qpos += 1;
           await tx`insert into questions (film_id, layer, body, position, status)
-                   values (${film!.id}, ${q.layer}, ${q.body}, ${qpos}, 'yayinda')`;
+                   values (${film!.id}, ${q.layer}, ${q.body}, ${qpos}, ${q.status ?? 'yayinda'})`;
         }
-        log(`film ${f.slug}: ${f.resources.length} sources, ${f.questions.length} questions`);
+        log(`film ${f.slug}: ${f.resources.length} draft sources, ${f.questions.length} questions`);
       }
       for (const e of events) {
         const existing = await tx`select id from events where number = ${e.number}`;

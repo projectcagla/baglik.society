@@ -44,6 +44,32 @@ const RIGHTS = [
   ['lisansli_ceviri', 'lisanslı / izinli çeviri'],
 ] as const;
 
+/**
+ * An editor-only suggestion. It reaches members only if an editor moves it
+ * into the field, reads it, and saves — never on its own.
+ */
+function RationaleSuggestion({ text }: { text: string }) {
+  const adopt = () => {
+    const field = document.getElementById('f-rationale') as HTMLTextAreaElement | null;
+    if (!field) return;
+    field.value = text;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.focus();
+  };
+  return (
+    <div className={styles.suggestion}>
+      <p className={ui.hint}>
+        <strong>öneri · onaysız</strong> — kaynağın künyesinden ve senin notundan çıkarıldı; kişisel
+        görüşün yerine geçmez. kullanacaksan kendi sözlerinle düzelt.
+      </p>
+      <p className={styles.suggestionText}>{text}</p>
+      <button type="button" className={`${ui.button} ${ui.small}`} onClick={adopt}>
+        öneriyi alana taşı
+      </button>
+    </div>
+  );
+}
+
 export function ResourceForm({
   filmId,
   layer,
@@ -154,8 +180,9 @@ export function ResourceForm({
           label="neden bu kaynak (2–3 cümle)"
           defaultValue={r?.rationale}
           rows={3}
-          hint="üyeye bu kaynağı neden seçtiğini söyler; okuma sayfasında notun üstünde durur"
+          hint="* önce katmanının temel kaynaklarında. üyeye bu kaynağı neden seçtiğini söyler; okuma sayfasında notun üstünde durur"
         />
+        {r?.rationale_draft && <RationaleSuggestion text={r.rationale_draft} />}
         <Area
           name="note"
           label="türkçe özgün not (1–3 paragraf)"

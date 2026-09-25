@@ -27,10 +27,35 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
+    // the browser is in California and the server (below) near the date line:
+    // every "27 eylül 2026 · pazar · 19.30" assertion proves Istanbul time
+    timezoneId: 'America/Los_Angeles',
     launchOptions: { executablePath },
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], launchOptions: { executablePath } } },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        timezoneId: 'America/Los_Angeles',
+        launchOptions: { executablePath },
+      },
+    },
+    // Mobile Safari's engine. Installed in CI (`playwright install webkit`);
+    // run locally with PW_WEBKIT=1 where WebKit is available.
+    ...(process.env.CI || process.env.PW_WEBKIT
+      ? [
+          {
+            name: 'webkit-iphone',
+            testMatch: /mobile\.spec\.ts/,
+            use: {
+              ...devices['iPhone 13'],
+              timezoneId: 'America/Los_Angeles',
+              launchOptions: {},
+            },
+          },
+        ]
+      : []),
   ],
   webServer: {
     // production build: exercises the real headers, caching and CSP
@@ -40,6 +65,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}/robots.txt`,
     timeout: 300_000,
     reuseExistingServer: !process.env.CI,
-    env: { ...e2eEnv, NODE_ENV: 'production' },
+    env: { ...e2eEnv, NODE_ENV: 'production', TZ: 'Pacific/Kiritimati' },
   },
 });

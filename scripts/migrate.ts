@@ -7,7 +7,8 @@ import { scriptSql } from './lib/db';
 
 const dir = join(process.cwd(), 'db', 'migrations');
 
-export async function migrate(url?: string, log = console.log) {
+/** `until`: stop after this file (upgrade tests start from an older schema). */
+export async function migrate(url?: string, log = console.log, opts: { until?: string } = {}) {
   const sql = scriptSql(url);
   try {
     await sql`create table if not exists schema_migrations (
@@ -20,7 +21,7 @@ export async function migrate(url?: string, log = console.log) {
       ).map((r) => [r.name, r.checksum]),
     );
     const files = readdirSync(dir)
-      .filter((f) => f.endsWith('.sql'))
+      .filter((f) => f.endsWith('.sql') && (!opts.until || f <= opts.until))
       .sort();
     for (const file of files) {
       const body = readFileSync(join(dir, file), 'utf8');

@@ -3,9 +3,9 @@ import { expect, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { e2eEnv } from '../../playwright.config';
 
-export type Who = 'owner' | 'editor' | 'member' | 'outsider';
+export type Who = 'owner' | 'admin' | 'editor' | 'member' | 'outsider';
 
-export function state(): Record<Who, { id: string; key: string; name: string }> {
+export function state(): Record<Who, { id: string; key: string; name: string; totp?: string }> {
   return JSON.parse(readFileSync('artifacts/e2e-state.json', 'utf8'));
 }
 

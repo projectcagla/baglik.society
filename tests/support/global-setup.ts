@@ -20,4 +20,12 @@ export default async function setup() {
   const { seed } = await import('../../scripts/seed');
   await migrate(url, () => {});
   await seed(url, () => {});
+  // the seed brings drafts; a (fixture) editor approves and publishes Canavar
+  const { approveAndPublishForTests, fixtureEditor } = await import('./publish-fixture');
+  const db = postgres(url, { max: 1, onnotice: () => {} });
+  try {
+    await approveAndPublishForTests(db, await fixtureEditor(db));
+  } finally {
+    await db.end();
+  }
 }

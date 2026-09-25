@@ -1,7 +1,8 @@
--- Manual rollback of 0003_editorial.sql. Run by hand as the table owner:
+-- Manual rollback of 0003_editorial.sql. Roll back 0004 first (it depends on
+-- the approval columns). Take a backup, then run by hand as the table owner:
 --   psql "$DATABASE_URL" -f db/rollback/0003_editorial.down.sql
 -- Data written into the new columns is lost by the column drops below —
--- export first if editors have used them. Tested: tests/integration/rollback.test.ts
+-- export first if editors have used them. Tested: tests/integration/migrations.test.ts
 --
 -- Deliberately kept: the row lock in app.set_rsvp. It changes no schema and
 -- removing it would bring back the last-seat race.

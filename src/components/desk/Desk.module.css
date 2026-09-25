@@ -343,3 +343,19 @@
 .formMore[open] > summary {
   margin-bottom: 1rem;
 }
+
+.suggestion {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 0.5rem;
+}
+
+.suggestionText {
+  max-width: var(--measure);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}

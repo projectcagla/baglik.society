@@ -31,9 +31,13 @@ test.describe.serial('desk', () => {
     await page.getByRole('link', { name: 'kaynak ekle' }).first().click();
     await page.getByLabel('türkçe başlık').fill('taslak bir okuma');
     await page.getByLabel('özgün bağlantı').fill('https://example.org/yazi');
+    await page.getByLabel('neden bu kaynak').fill('gösterimden önce bir bağlam kuruyor.');
     await page.getByLabel('türkçe özgün not (1–3 paragraf)').fill('kısa bir özgün not.');
     await page.getByRole('button', { name: 'kaynağı oluştur (taslak)' }).click();
     await expect(page.getByText('kaynak taslak olarak oluşturuldu')).toBeVisible();
+    // a person checks the bibliography and the link before anything goes out
+    await page.getByRole('button', { name: 'künyeyi ve bağlantıyı kontrol ettim' }).click();
+    await expect(page.getByText('onay bekliyor')).toHaveCount(0);
 
     const other = await browser.newContext();
     const member = await other.newPage();
@@ -47,6 +51,7 @@ test.describe.serial('desk', () => {
     await member.reload();
     await expect(member.getByRole('heading', { name: 'taslak bir okuma' })).toBeVisible();
     await other.close();
+    await db((sql) => sql`delete from resources where heading = 'taslak bir okuma'`);
   });
 
   test('owner: second factor is required for members and location', async ({ page }) => {
@@ -147,16 +152,28 @@ test.describe.serial('desk', () => {
     ).toBeVisible();
 
     await page.getByLabel('spoiler').selectOption('yok');
+    await page.getByLabel('neden bu kaynak').fill('gösterimden önce bir bağlam kuruyor.');
     await page.getByRole('button', { name: 'kaydet', exact: true }).click();
     await expect(page.getByText('kaydedildi.')).toBeVisible();
     await page.goto(page.url().replace(/\?.*$/, ''));
+    // everything but the human approval is in place — and that is not enough
+    await expect(list).toContainText('onay bekliyor');
+    await page.getByRole('button', { name: 'yayımla' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'henüz bir kişi tarafından kontrol edilmedi' }),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'künyeyi ve bağlantıyı kontrol ettim' }).click();
+    await expect(list).not.toContainText('onay bekliyor');
     await expect(list).not.toContainText('(eksik)');
+    await expect(list).toContainText('deneme editör');
     await page.getByRole('button', { name: 'yayımla' }).click();
     await expect(page.getByRole('button', { name: 'taslağa al' })).toBeVisible();
 
-    await expect(list).toContainText('onay bekliyor');
-    await page.getByRole('button', { name: 'künyeyi ve bağlantıyı kontrol ettim' }).click();
-    await expect(list).not.toContainText('onay bekliyor');
+    // changing the link withdraws the approval and takes the source back to draft
+    await page.getByLabel('özgün bağlantı').fill('https://example.org/denetim-yeni');
+    await page.getByRole('button', { name: 'kaydet', exact: true }).click();
+    await expect(page.getByText('onay düştü ve kaynak taslağa döndü')).toBeVisible();
     await db((sql) => sql`delete from resources where heading = 'denetim listesi'`);
   });
 

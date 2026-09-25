@@ -3,6 +3,9 @@ import { publishChecklist, readyToPublish, type PublishFields } from '@/lib/publ
 
 const ok: PublishFields = {
   heading: 'Gündelik hayatın ayrıntıları',
+  rationale: 'Kore-eda sinemasına ilk kez girenler için bir yol haritası.',
+  section: 'okuma',
+  approved_at: new Date('2026-09-25T10:00:00Z'),
   title_original: 'Where to begin with Hirokazu Koreeda',
   url: 'https://www.bfi.org.uk/features/where-begin-hirokazu-koreeda',
   layer: 'once',
@@ -31,6 +34,19 @@ describe('pre-publish checklist', () => {
     expect(failing({ note: '' })).toEqual(['not']);
     expect(failing({ spoiler_level: 'belirtilmedi' })).toEqual(['spoiler']);
     expect(failing({ spoiler_level: 'var' })).toEqual(['katman']);
+    expect(failing({ rationale: '  ' })).toEqual(['gerekce']);
+    expect(failing({ approved_at: null })).toEqual(['onay']);
+  });
+
+  it('a person must approve every external link; an automatic check is not an approval', () => {
+    // nothing in the fields a link checker writes can satisfy "onay"
+    expect(failing({ approved_at: null, url: 'https://www.bfi.org.uk/x' })).toEqual(['onay']);
+    expect(failing({ approved_at: null, url: null, rights_status: 'kendi_icerigi' })).toEqual([]);
+  });
+
+  it('companions and the after layer do not need a rationale', () => {
+    expect(failing({ rationale: null, section: 'eslik' })).toEqual([]);
+    expect(failing({ rationale: null, layer: 'sonra' })).toEqual([]);
   });
 
   it('context decides: own texts need no link, links need no note, spoilers go after', () => {

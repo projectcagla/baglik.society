@@ -94,9 +94,17 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
           <p>
             son insan onayı:{' '}
             {r.approved_at ? (
-              <strong>{formatShort(r.approved_at)}</strong>
+              <strong>
+                {formatShort(r.approved_at)}
+                {r.approver ? ` · ${r.approver}` : ''}
+              </strong>
             ) : (
               <span className={`${styles.pill} ${styles.pillWarn}`}>onay bekliyor</span>
+            )}
+            {!r.approved_at && r.url && r.status === 'yayinda' && (
+              <span className={`${styles.pill} ${styles.pillBad}`}>
+                yayında ama onaysız (onay kuralından önceki kayıt)
+              </span>
             )}
             {r.link_report_count > 0 && (
               <span className={`${styles.pill} ${styles.pillBad}`}>
@@ -112,7 +120,8 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
           </form>
           <p className={ui.hint}>
             bağlantıyı açıp başlık, yazar, yayın ve tarihi kaynağın kendisinden doğruladıysan
-            onayla. bağlantı ya da künye değişirse onay kendiliğinden düşer.
+            onayla. otomatik bağlantı denetimi (200 yanıtı) onay yerine geçmez. bağlantı ya da künye
+            değişirse onay düşer; kaynak yayındaysa taslağa döner.
             {r.provenance && <> köken: {r.provenance}.</>}
           </p>
         </div>

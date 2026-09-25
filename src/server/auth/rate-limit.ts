@@ -11,6 +11,7 @@ export const LIMITS = {
   mfa: { failures: 5, windowMin: 15 },
   recoveryIp: { failures: 5, windowMin: 60 },
   recoveryEmail: { failures: 3, windowMin: 24 * 60 },
+  setup: { failures: 5, windowMin: 60 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

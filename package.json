@@ -38,6 +38,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run db:migrate && npm run db:seed && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -50,6 +51,7 @@
     "invite:issue": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/issue-invite.ts",
     "mfa:reset": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/mfa-reset.ts",
     "links:check": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/link-check.ts",
+    "smoke": "tsx scripts/smoke.ts",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",

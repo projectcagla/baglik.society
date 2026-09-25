@@ -14,12 +14,19 @@ test.describe('reading room (önce)', () => {
     await expect(page.getByText(/002\s*\/\s*gösterim öncesi/)).toBeInViewport();
     // the count is the real number of published pre-screening sources
     const [count] = await db(
-      (sql) => sql<{ n: number }[]>`
-        select count(*)::int as n from resources r join films f on f.id = r.film_id
+      (sql) => sql<{ n: number; e: number }[]>`
+        select count(*) filter (where r.section <> 'eslik')::int as n,
+               count(*) filter (where r.section = 'eslik')::int as e
+          from resources r join films f on f.id = r.film_id
          where f.slug = '002-canavar' and r.layer = 'once' and r.status = 'yayinda'`,
     );
+    // 2–4 core readings up front; companions are named, not counted as required reading
+    expect(count!.n).toBeGreaterThanOrEqual(2);
+    expect(count!.n).toBeLessThanOrEqual(4);
     const meta = page.getByText(
-      new RegExp(`^${count!.n} kaynak · bu sayfadaki notlar yaklaşık \\d+ dk`),
+      new RegExp(
+        `^${count!.n} temel okuma · ${count!.e} eşlik eden · bu sayfadaki notlar yaklaşık \\d+ dk`,
+      ),
     );
     await expect(meta).toBeInViewport();
     await expect(

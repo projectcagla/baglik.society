@@ -35,8 +35,9 @@ jobs:
       - run: npm run typecheck
       - name: unit + integration (real postgres, RLS)
         run: npm test
-      - run: npx playwright install --with-deps chromium
-      - name: e2e (production build)
+      - name: browsers (Chromium, and WebKit for iPhone Safari)
+        run: npx playwright install --with-deps chromium webkit
+      - name: e2e (production build; Chromium all specs, WebKit mobile spec)
         run: npm run test:e2e
         env:
           CI: '1'
@@ -44,7 +45,9 @@ jobs:
         if: always()
         with:
           name: e2e-screenshots-and-report
+          # synthetic e2e accounts and data only
           path: |
             artifacts/screenshots
+            artifacts/qa
             playwright-report
           retention-days: 14

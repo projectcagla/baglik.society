@@ -1,3 +1,4 @@
+import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { asAnonymous, asMember } from '@/server/db/context';
 import { asSystem } from '@/server/db/system';
@@ -33,16 +34,26 @@ const created: string[] = [];
 
 async function resource(
   filmId: string,
-  patch: { layer: 'once' | 'sonra'; status: 'taslak' | 'yayinda'; spoiler?: string },
+  patch: {
+    layer: 'once' | 'sonra';
+    status: 'taslak' | 'yayinda';
+    spoiler?: string;
+    approved?: boolean;
+  },
 ) {
-  const [r] = await asSystem(
-    (tx) => tx<{ id: string }[]>`
-      insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status, status, published_at)
+  // a published external source carries a person's approval (0004): the
+  // fixture signs as the test editor, the way the desk would
+  const approve = patch.approved ?? patch.status === 'yayinda';
+  const [r] = await asSystem(async (tx) => {
+    if (approve) await tx`select set_config('app.member_id', ${editor.id}, true)`;
+    return tx<{ id: string }[]>`
+      insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status,
+                             status, published_at, approved_at)
       values (${filmId}, ${patch.layer}, 'okuma', 'article', ${`test kaynak ${created.length}`},
               'https://example.org/x', ${patch.spoiler ?? 'yok'}, 'baglanti', ${patch.status},
-              ${patch.status === 'yayinda' ? new Date() : null})
-      returning id`,
-  );
+              ${patch.status === 'yayinda' ? new Date() : null}, ${approve ? new Date() : null})
+      returning id`;
+  });
   created.push(r!.id);
   return r!.id;
 }
@@ -104,7 +115,12 @@ describe('"üye gibi gör" uses member rights in the database', () => {
 
 describe('spoiler contract', () => {
   it('a spoiler source cannot be published in the pre-screening layer', async () => {
-    const id = await resource(canavar, { layer: 'once', status: 'taslak', spoiler: 'var' });
+    const id = await resource(canavar, {
+      layer: 'once',
+      status: 'taslak',
+      spoiler: 'var',
+      approved: true,
+    });
     await expect(
       asMember(
         { memberId: editor.id, mfa: false },
@@ -311,16 +327,136 @@ describe('desk: checklist, approval, queue', () => {
       ...patch,
     }) as ResourceInput;
 
-  it('the server refuses a publish the checklist would refuse', async () => {
+  it('the server refuses a publish the checklist would refuse, item by item', async () => {
     const id = await createResource(editor, canavar, input());
     created.push(id);
     await expect(setResourceStatus(editor, id, true)).rejects.toThrow(/publish checklist/);
     await updateResource(editor, id, input({ spoiler_level: 'yok' }));
+    // still missing: "neden bu kaynak" and a person's approval
+    await expect(setResourceStatus(editor, id, true)).rejects.toThrow(/publish checklist/);
+    await updateResource(editor, id, input({ spoiler_level: 'yok', rationale: 'neden: test.' }));
+    // only the person's check is missing now, and the error says exactly that
+    await expect(setResourceStatus(editor, id, true)).rejects.toThrow(
+      /publication requires human approval/,
+    );
+    await approveResource(editor, id);
     await setResourceStatus(editor, id, true);
     const [row] = await asSystem(
       (tx) => tx<{ status: string }[]>`select status from resources where id = ${id}`,
     );
     expect(row!.status).toBe('yayinda');
+  });
+
+  it('the database itself refuses an unapproved publish and an approval without a person', async () => {
+    const id = await createResource(
+      editor,
+      canavar,
+      input({ spoiler_level: 'yok', rationale: 'neden: test.' }),
+    );
+    created.push(id);
+    // straight SQL as the editor, skipping the desk's checklist
+    await expect(
+      asMember(
+        { memberId: editor.id, mfa: false },
+        (tx) => tx`update resources set status = 'yayinda', published_at = now() where id = ${id}`,
+      ),
+    ).rejects.toThrow(/publication requires human approval/);
+    // a script, seed or link checker has no person in context
+    await expect(
+      asSystem((tx) => tx`update resources set approved_at = now() where id = ${id}`),
+    ).rejects.toThrow(/approval requires a person/);
+    await expect(
+      asSystem(
+        (tx) => tx`
+          insert into resources (film_id, layer, section, kind, heading, url, spoiler_level, rights_status, status, published_at)
+          values (${canavar}, 'once', 'okuma', 'article', 'seed gibi', 'https://example.org/s', 'yok', 'baglanti', 'yayinda', now())`,
+      ),
+    ).rejects.toThrow(/publication requires human approval/);
+    // approval is recorded as the signed-in person, whatever the caller claims
+    await asMember(
+      { memberId: editor.id, mfa: false },
+      (tx) =>
+        tx`update resources set approved_at = now(), approved_by = ${member.id} where id = ${id}`,
+    );
+    const [row] = await asSystem(
+      (tx) => tx<{ approved_by: string }[]>`select approved_by from resources where id = ${id}`,
+    );
+    expect(row!.approved_by).toBe(editor.id);
+  });
+
+  it('a published source whose link changes goes back to draft; an edit cannot break a published one', async () => {
+    const id = await createResource(
+      editor,
+      canavar,
+      input({ spoiler_level: 'yok', rationale: 'neden: test.' }),
+    );
+    created.push(id);
+    await approveResource(editor, id);
+    await setResourceStatus(editor, id, true);
+    expect((await getFilm(member, '002-canavar'))!.before.map((r) => r.id)).toContain(id);
+
+    // removing the rationale of a published source is refused (checklist on edit)
+    await expect(
+      updateResource(editor, id, input({ spoiler_level: 'yok', rationale: null })),
+    ).rejects.toThrow(/publish checklist/);
+    // a note fix keeps it published and approved
+    const kept = await updateResource(
+      editor,
+      id,
+      input({ spoiler_level: 'yok', rationale: 'neden: test.', note: 'yazım düzeltmesi' }),
+    );
+    expect(kept).toEqual({ approvalWithdrawn: false, returnedToDraft: false });
+    // a new URL: approval withdrawn, back to draft, gone for members
+    const moved = await updateResource(
+      editor,
+      id,
+      input({ spoiler_level: 'yok', rationale: 'neden: test.', url: 'https://example.org/baska' }),
+    );
+    expect(moved).toEqual({ approvalWithdrawn: true, returnedToDraft: true });
+    expect((await getFilm(member, '002-canavar'))!.before.map((r) => r.id)).not.toContain(id);
+  });
+
+  it('a link edit racing a publish can never leave an unapproved source published', async () => {
+    const id = await createResource(
+      editor,
+      canavar,
+      input({ spoiler_level: 'yok', rationale: 'neden: test.' }),
+    );
+    created.push(id);
+    await approveResource(editor, id);
+    const editorTx = async () => {
+      const c = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+      await c`begin`;
+      await c.unsafe('set local role baglik_app');
+      await c`select set_config('app.member_id', ${editor.id}, true), set_config('app.mfa', 'off', true)`;
+      return c;
+    };
+    const edit = await editorTx();
+    const publish = await editorTx();
+    try {
+      // the edit holds the row with a new link (approval withdrawn, not yet committed)
+      await edit`update resources set url = 'https://example.org/yaris' where id = ${id}`;
+      // the publish checked an approved row a moment ago and now tries to flip it
+      const racing =
+        publish`update resources set status = 'yayinda', published_at = now() where id = ${id}`.then(
+          () => 'published',
+          (e: Error) => e.message,
+        );
+      await new Promise((r) => setTimeout(r, 300));
+      await edit`commit`;
+      expect(await racing).toMatch(/publication requires human approval/);
+      await publish`rollback`;
+    } finally {
+      await edit.end();
+      await publish.end();
+    }
+    const [row] = await asSystem(
+      (tx) =>
+        tx<
+          { status: string; approved_at: Date | null }[]
+        >`select status, approved_at from resources where id = ${id}`,
+    );
+    expect(row).toMatchObject({ status: 'taslak', approved_at: null });
   });
 
   it('approval is by a person and falls away when the bibliography changes', async () => {

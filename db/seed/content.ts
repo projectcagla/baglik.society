@@ -7,6 +7,13 @@
 // left empty for the editor. Turkish notes are the curator's original short
 // summaries, not translations. Links start as "denetlenmedi" (unchecked) —
 // the link checker verifies them from the deployed app.
+//
+// Release 2026-09: every source is seeded as a DRAFT. A person must open the
+// original page, compare the bibliography and approve it in the desk before
+// it can be published (enforced by 0004). `rationale_draft` holds suggestions
+// for "neden bu kaynak", written from the curator's own notes and the
+// sources' public bibliographic facts; they are shown to editors only and are
+// never published unless an editor adopts them.
 
 export interface SeedResource {
   layer: 'once' | 'sonra';
@@ -40,6 +47,8 @@ export interface SeedResource {
   rights_status: 'baglanti' | 'ozgun_ozet';
   /** open question for the editor; shown in the desk queue, never to members */
   review_note?: string;
+  /** suggested "neden bu kaynak", editor-only until adopted */
+  rationale_draft?: string;
 }
 
 // 001's PDF is the early selection (a Murakami book, a Chekhov play, film
@@ -62,7 +71,8 @@ export interface SeedFilm {
   source_file: string;
   after_published: boolean;
   resources: SeedResource[];
-  questions: { layer: 'once' | 'sonra'; body: string }[];
+  /** questions from the club's own files are published; suggestions are drafts */
+  questions: { layer: 'once' | 'sonra'; body: string; status?: 'taslak' | 'yayinda' }[];
 }
 
 export const films: SeedFilm[] = [
@@ -155,6 +165,17 @@ export const films: SeedFilm[] = [
         layer: 'sonra',
         body: 'Bir başkasını gerçekten tanımak için onun bütün hikâyesini bilmek gerekir mi?',
       },
+      // suggestions for the table after the night: drafts until an editor publishes them
+      {
+        layer: 'sonra',
+        status: 'taslak',
+        body: 'Açılış jeneriği ancak yaklaşık kırk dakika sonra geliyor. Bu uzun giriş, hikâyenin geri kalanını nasıl okumamıza yol açtı?',
+      },
+      {
+        layer: 'sonra',
+        status: 'taslak',
+        body: 'Provalarda herkes kendi dilinde oynuyor, işaret dili de dahil. Birbirini anlamak için aynı dili konuşmak gerekir mi?',
+      },
     ],
   },
   {
@@ -175,6 +196,8 @@ export const films: SeedFilm[] = [
         section: 'okuma',
         kind: 'article',
         heading: 'Gündelik hayatın ayrıntıları',
+        rationale_draft:
+          'Kore-eda’nın filmografisine genel bir giriş. canavar’dan önce yönetmenin tekrar eden izleklerini tanımak için bir çerçeve kuruyor; onu ilk kez izleyecekler için iyi bir başlangıç noktası.',
         title_original: 'Where to begin with Hirokazu Koreeda',
         author: 'Leigh Singer',
         publication: 'BFI',
@@ -194,6 +217,8 @@ export const films: SeedFilm[] = [
         section: 'okuma',
         kind: 'essay',
         heading: 'Bir başkasının iç dünyası',
+        rationale_draft:
+          'Yönetmenin kendi kaleminden bir metin. Bir karakteri dışarıdan izlemekle içini bilmek arasındaki farkı kendi sözleriyle anlatıyor; gösterimde kimin gözünden baktığımızı düşünmek için bir hazırlık.',
         title_original: 'On the Novelistic Afterlife of After Life',
         author: 'Hirokazu Kore-eda',
         publication: 'Criterion',
@@ -214,6 +239,8 @@ export const films: SeedFilm[] = [
         section: 'okuma',
         kind: 'interview',
         heading: 'Hafızanın bugünü',
+        rationale_draft:
+          'Aynı olayın farklı zamanlarda başka türlü anlatılabileceği fikrini yönetmenin söyleşisinden okumak, gösterim öncesinde hatırlama ve anlatma üzerine bir zemin kuruyor.',
         title_original: 'Hirokazu Kore-eda’s Parisian Rendezvous',
         author: 'Hillary Weston',
         publication: 'Criterion',
@@ -234,6 +261,8 @@ export const films: SeedFilm[] = [
         section: 'okuma',
         kind: 'interview',
         heading: 'Ailenin sınırları',
+        rationale_draft:
+          'canavar’dan hemen önceki filmi Broker üzerine yakın tarihli bir söyleşi. Yönetmenin aile ve aidiyet sorusuna güncel bakışını, bu filme en yakın zamandan gösteriyor.',
         title_original: 'Hirokazu Koreeda on Broker',
         author: 'Lou Thomas',
         publication: 'BFI',

@@ -117,16 +117,17 @@ test.describe('public surface', () => {
     await ctx.close();
   });
 
-  test('lost key: same sentence for known and unknown addresses', async ({ page }) => {
-    const answers: string[] = [];
-    for (const email of ['uye@example.test', 'kimse@example.test']) {
-      await page.goto('/kayip-anahtar');
-      await page.getByLabel('e-posta').fill(email);
-      await page.getByRole('button', { name: 'kod iste' }).click();
-      const status = page.getByRole('status');
-      await expect(status).toContainText('istek alındı');
-      answers.push((await status.textContent()) ?? '');
-    }
-    expect(answers[0]).toBe(answers[1]);
+  test('lost key without a mail provider: an honest sentence, nothing issued', async ({ page }) => {
+    const { db } = await import('./helpers');
+    // the e2e server has no RESEND_API_KEY / MAIL_FROM, like a fresh production
+    await page.goto('/kayip-anahtar');
+    await expect(page.getByText('bu kurulumda e-posta gönderimi açık değil.')).toBeVisible();
+    await expect(page.getByLabel('e-posta')).toHaveCount(0);
+    await expect(page.getByText(/gönderilir|gönderildi|gönderilecek/)).toHaveCount(0);
+    const issued = await db(
+      (sql) => sql`select 1 from private.credentials where kind = 'recovery'`,
+    );
+    expect(issued).toHaveLength(0);
+    // with a provider, the known/unknown answer is identical (integration: auth.test.ts)
   });
 });

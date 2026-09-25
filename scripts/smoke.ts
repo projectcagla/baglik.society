@@ -19,8 +19,15 @@ const PRIVATE = [
 const results: { check: string; ok: boolean; note?: string }[] = [];
 const check = (name: string, ok: boolean, note?: string) => results.push({ check: name, ok, note });
 
+// Vercel "Protection Bypass for Automation", when previews are protected
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 async function get(path: string, init: RequestInit = {}) {
-  return fetch(base + path, { redirect: 'manual', ...init });
+  return fetch(base + path, {
+    redirect: 'manual',
+    ...init,
+    headers: bypass ? { 'x-vercel-protection-bypass': bypass } : {},
+  });
 }
 
 async function main() {

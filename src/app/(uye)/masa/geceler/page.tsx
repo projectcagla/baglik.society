@@ -35,7 +35,7 @@ export default async function DeskEvents() {
               <th>film</th>
               <th>zaman</th>
               <th>durum</th>
-              {viewer.isAdmin && <th>katılım</th>}
+              {viewer.isAdmin && viewer.mfaFresh && <th>katılım</th>}
             </tr>
           </thead>
           <tbody>
@@ -55,7 +55,7 @@ export default async function DeskEvents() {
                 </td>
                 <td>{formatEventDate(e.starts_at)}</td>
                 <td>{e.status}</td>
-                {viewer.isAdmin && (
+                {viewer.isAdmin && viewer.mfaFresh && (
                   <td>
                     {e.invited} davetli · {e.yes} geliyorum
                   </td>

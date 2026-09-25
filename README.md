@@ -52,10 +52,17 @@ Yalnızca geliştirme için: `npm run db:seed:demo` açıkça "deneme" diye etik
 | `npm run owner:create -- --name … --email …` | kurucu + tek kullanımlık davet kodu |
 | `npm run invite:issue -- --email …` | mevcut üyeye yeni davet kodu (e-posta sağlayıcısı yoksa kurtarma yolu) |
 | `npm run mfa:reset -- --email …` | kurucu doğrulama uygulamasını kaybettiyse (veritabanı erişimi gerekir) |
-| `npm run links:check` | kaynak bağlantılarını denetler (cron ile aynı kod) |
+| `npm run links:check` | kaynak bağlantılarını denetler (cron ile aynı kod; `LINK_CHECK=off` iken hiçbir istek atmaz) |
+| `npm run smoke -- https://…` | bir dağıtımın anonim yüzeyini, başlıkları, sağlık sinyalini ve kurulum durumunu denetler |
+| `npm run vercel-build` | Vercel build'i: migrasyon → seed → `next build` |
+| `npx playwright test -c playwright.acceptance.config.ts` | staging kabul testi (yalnız boş staging; bkz. runbook) |
 | `npm run brand:derive` | marka türevlerini master'dan yeniden üretir |
 
-## yayına alma (Vercel + Supabase ya da Neon)
+## yayına alma
+
+Adım adım ve güncel yol: **`docs/PRODUCTION_RUNBOOK.md`** (Vercel + Neon, ortam değişkeni adları, `/kurulum` ile ilk kurucu, smoke test, yedek, geri alma). Release durumu ve kanıtlar: **`docs/RELEASE_2026-09.md`**. Aşağıdaki özet eski kısa yoldur.
+
+### kısa özet (Vercel + Supabase ya da Neon)
 
 1. **Veritabanı:** Supabase (ya da Neon) projesi aç. Bağlantı adresi:
    - Supabase: *Connect → Transaction pooler* (port 6543). `DB_PREPARE=false` kalsın.

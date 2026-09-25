@@ -37,10 +37,18 @@ jobs:
         run: npm test
       - name: browsers (Chromium, and WebKit for iPhone Safari)
         run: npx playwright install --with-deps chromium webkit
-      - name: e2e (production build; Chromium all specs, WebKit mobile spec)
-        run: npm run test:e2e
+      - name: e2e — Chromium, all specs (production build, __Host- cookie)
+        run: npx playwright test --project=chromium
         env:
           CI: '1'
+      - name: e2e — WebKit (iPhone), member on a phone
+        # plain-http test server: WebKit needs the non-__Host cookie here;
+        # production is HTTPS with the __Host- cookie
+        run: npx playwright test --project=webkit-iphone
+        env:
+          CI: '1'
+          E2E_SKIP_BUILD: '1'
+          E2E_INSECURE_COOKIES: '1'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

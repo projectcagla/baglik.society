@@ -359,3 +359,10 @@
   line-height: 1.6;
   color: var(--ink-2);
 }
+
+/* long, honest labels wrap on a phone instead of pushing the page sideways */
+.approval button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}

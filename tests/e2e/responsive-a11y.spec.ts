@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { loginAs } from './helpers';
+import { db, loginAs } from './helpers';
 
 const VIEWPORTS = [
   [390, 844],
@@ -53,7 +53,13 @@ async function noOverflow(page: Page, label: string) {
   expect(clipped, `${label}: elements outside the viewport`).toEqual([]);
 }
 
-const name = (p: string) => (p === '/' ? 'kapi' : p.replace(/^\//, '').replace(/\//g, '_'));
+const name = (p: string) =>
+  p === '/'
+    ? 'kapi'
+    : p
+        .replace(/^\//, '')
+        .replace(/\/masa\/kaynaklar\/.*/, 'masa_kaynak')
+        .replace(/\//g, '_');
 
 test.describe('responsive', () => {
   for (const [w, h] of VIEWPORTS) {
@@ -63,7 +69,13 @@ test.describe('responsive', () => {
       await noOverflow(page, `door ${w}`);
       await page.screenshot({ path: `artifacts/screenshots/${w}x${h}-kapi.png`, fullPage: true });
       await loginAs(page, 'owner');
-      for (const p of [...MEMBER_PAGES, '/masa', '/masa/filmler']) {
+      // a source record in the desk: long labels (approval, provenance) must wrap
+      const [src] = await db(
+        (sql) => sql<{ id: string }[]>`
+          select r.id from resources r join films f on f.id = r.film_id
+           where f.slug = '001-drive-my-car' order by r.position limit 1`,
+      );
+      for (const p of [...MEMBER_PAGES, '/masa', '/masa/filmler', `/masa/kaynaklar/${src!.id}`]) {
         await page.goto(p);
         await page.waitForLoadState('networkidle');
         await noOverflow(page, `${p} ${w}`);

@@ -65,6 +65,14 @@ export default defineConfig({
     url: `http://localhost:${PORT}/robots.txt`,
     timeout: 300_000,
     reuseExistingServer: !process.env.CI,
-    env: { ...e2eEnv, NODE_ENV: 'production', TZ: 'Pacific/Kiritimati' },
+    env: {
+      ...e2eEnv,
+      NODE_ENV: 'production',
+      TZ: 'Pacific/Kiritimati',
+      // WebKit refuses Secure cookies over plain http://localhost (Chromium
+      // allows them). The WebKit run sets this to use a non-__Host cookie;
+      // the Chromium run keeps testing the production __Host- cookie.
+      ...(process.env.E2E_INSECURE_COOKIES ? { INSECURE_COOKIES: '1' } : {}),
+    },
   },
 });

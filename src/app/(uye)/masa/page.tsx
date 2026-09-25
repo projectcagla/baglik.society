@@ -83,7 +83,9 @@ export default async function DeskHome() {
             {formatEventDate(upcoming.starts_at)}
           </p>
           <p className="meta">
-            {upcoming.invited} davetli · {upcoming.yes} geliyorum
+            {viewer.isAdmin && viewer.mfaFresh
+              ? `${upcoming.invited} davetli · ${upcoming.yes} geliyorum`
+              : 'davetli ve katılım sayıları ikinci doğrulaması açık yöneticiye görünür.'}
           </p>
           <p>
             <Link href={viewer.isAdmin ? `/masa/geceler/${upcoming.id}` : '/masa/geceler'}>

@@ -21,6 +21,13 @@ export default defineConfig({
     video: 'off',
     screenshot: 'off',
     timezoneId: 'America/Los_Angeles',
+    // Vercel "Protection Bypass for Automation", when previews are protected
+    extraHTTPHeaders: process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+      ? {
+          'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+          'x-vercel-set-bypass-cookie': 'true',
+        }
+      : {},
     launchOptions: { executablePath },
   },
 });

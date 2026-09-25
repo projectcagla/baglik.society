@@ -75,16 +75,14 @@ Brief ana ruhu koruyan iki gerekçeli alternatif istiyordu. Ortam otomatik çal�
 
 ## ekran görüntüleri
 
-`docs/screenshots/` (v1.1, production build, Chromium, 1x, üye görünümü; masa editör görünümü; e2e deneme verisi, gerçek hesap ya da konum yok):
+`docs/qa/2026-09/` — release 2026-09 görsel QA seti. Production build, **boş bir veritabanına production akışıyla** kurulmuş yerel staging (`/kurulum` → kurucu → editör/üye); Chromium, 1x. Her klasör yalnız o rolün gerçek oturumuyla alındı; kurucu ekranı üye görüntüsü olarak kullanılmadı. Veriler sentetik; kod, anahtar ya da konum yok.
 
-| sayfa | 320 | 390 | 1440 |
-| --- | --- | --- | --- |
-| kapı | `kapi-320.webp` | `kapi-390.webp` | `kapi-1440.webp` |
-| oda | `oda-320.webp` | `oda-390.webp` | `oda-1440.webp` |
-| canavar · okuma | `canavar-okuma-320.webp` | `canavar-okuma-390.webp` | `canavar-okuma-1440.webp` |
-| canavar · gece | `canavar-gece-320.webp` | `canavar-gece-390.webp` | `canavar-gece-1440.webp` |
-| drive my car · sonra | `drive-my-car-sonra-320.webp` | `drive-my-car-sonra-390.webp` | `drive-my-car-sonra-1440.webp` |
-| defter | `defter-320.webp` | `defter-390.webp` | `defter-1440.webp` |
-| masa · yeni kaynak | `masa-yeni-kaynak-320.webp` | `masa-yeni-kaynak-390.webp` | `masa-yeni-kaynak-1440.webp` |
+| klasör       | sayfalar (her biri 320 / 390 / 1440)                                                                                 |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `anonymous/` | `kapi`, `kayip-anahtar` (e-posta sağlayıcı yokken dürüst cümle)                                                      |
+| `member/`    | `oda`, `canavar-once-okuma`, `canavar-gece`, `canavar-dosya`, `drive-my-car-sonra`, `defter`                         |
+| `editor/`    | `masa-kuyruk`, `masa-yeni-kaynak`, `masa-kaynak-onay` (yayın öncesi denetim + insan onayı)                          |
+
+iPhone / WebKit: `tests/e2e/mobile.spec.ts` CI'da WebKit (iPhone 13 profili) ile de koşar; ekran görüntüleri CI artefaktında (`artifacts/qa/webkit-iphone/member/`). Gerçek bir iPhone Safari'de elle kontrol yayın sonrası yapılmalı (bkz. `docs/RELEASE_2026-09.md`).
 
 Test her çalıştığında tüm sayfaların tam boy görüntüleri `artifacts/screenshots/` klasörüne yeniden üretiliyor (CI'da artefakt olarak saklanıyor).

@@ -40,6 +40,8 @@
 | `/masa`, `/masa/filmler/**`, `/masa/kaynaklar/**`, `/masa/baglantilar` | 303 | 403 | ✓ | ✓ |
 | `/masa/geceler/[id]`, `/masa/uyeler/**`, `/masa/kayit` | 303 | 403 | 403 (liste salt okunur) | MFA yoksa → `/masa/guvenlik` |
 | `/api/cron/link-check` | Bearer `CRON_SECRET` yoksa 404 | | | |
+| `/api/health` | `{"status":"ok"}` ya da 503 `unavailable`; ayrıntı yok | | | |
+| `/kurulum` | yalnız `SETUP_TOKEN` tanımlı ve kurucu yokken; aksi hâlde kapıya döner | | | |
 
 Anonim bir ziyaretçi var olan ve olmayan her özel adres için aynı 303 cevabını alır. URL tahmini hiçbir şey söylemez. Dönüş adresi, 10 dakikalık HTTP-only bir çerezde saklanır; sorgu parametresine yazılmaz. Giriş, MFA ve form eylemlerinden sonraki her dönüş adresi aynı `safeReturnPath` süzgecinden geçer (yalnız bilinen bölümler; `//`, `\`, `..`, şema ve satır sonu reddedilir).
 
@@ -76,8 +78,10 @@ Bu tablo `tests/e2e/authz-matrix.spec.ts` içinde gerçek HTTP ile sınanıyor: 
 | katkı metni sonradan değiştirilemez | `revoke update (body) on contributions` | sessiz düzenleme yok; üye isterse geri çeker (karar: düzenleme yerine geri çekme) |
 | üye kırık bağlantı bildirebilir | `app.report_link()`: yalnız görebildiği yayındaki kaynak, üye/kaynak başına günde bir | editör kuyruğuna düşer; analitik yok |
 | kaynağın kökeni, gerekçesi, son insan onayı | `rationale`, `source_minutes`, `provenance`, `approved_at/by`, `review_note` | neyin nereden geldiği ve kimin doğruladığı kayıtta; editör notu üye yanıtından sunucuda çıkarılır |
+| **dış bağlantılı kaynak, bir kişinin onayı olmadan yayımlanamaz** (0004) | `resources_publication_guard` tetikleyicisi: onay yalnız oturumdaki kişiyle (`approved_by` = o kişi; script/seed/bağlantı denetleyicisi onaylayamaz); URL ya da künye değişince onay düşer, yayındaki kaynak taslağa döner; 0004 öncesi yayında olanlar kaybolmaz, kuyrukta bekler | HTTP 200 bir insan kontrolü değildir; eski seed ya da doğrudan SQL de bu kuralı aşamaz |
+| editör önerisi | `rationale_draft` (0004): yalnız masada görünür, üye yanıtından çıkarılır | yapay/taslak metin kimsenin kişisel görüşü gibi yayımlanmaz |
 
-Yayın öncesi denetim (`src/lib/publish-check.ts`): başlık, tek ve açık bir http(s) bağlantı, hak durumu, özgün özet seçiliyse Türkçe not, açıkça seçilmiş spoiler düzeyi, spoiler'a uygun katman. Aynı işlev masada listeyi çiziyor ve sunucuda yayımı reddediyor. Künye ya da bağlantı değişince insan onayı kendiliğinden düşer.
+Yayın öncesi denetim (`src/lib/publish-check.ts`): başlık, tek ve açık bir http(s) bağlantı, hak durumu, özgün özet seçiliyse Türkçe not, önce katmanının temel kaynakları için "neden bu kaynak", açıkça seçilmiş spoiler düzeyi, spoiler'a uygun katman ve insan onayı. Yayımlama satırı kilitleyerek denetler; yayındaki bir kaynak düzenlemeyle yayımlanamaz hâle getirilemez. Migrasyon geri dönüşleri: `db/rollback/0004_release.down.sql`, ardından `0003_editorial.down.sql` (`tests/integration/migrations.test.ts` v1 verisinden yükseltmeyi ve ikisini de sınar). Aynı işlev masada listeyi çiziyor ve sunucuda yayımı reddediyor. Künye ya da bağlantı değişince insan onayı kendiliğinden düşer.
 
 Moderasyon geri alınabilir: kaldırılan katkı "geri aç", gizlenen paylaşılmış not "geri aç" ile döner, her adım `audit_logs`'ta (`contribution.moderate`, `journal.moderate`). Geri çekilen ya da kaldırılan katkının metni üyelere sunucudan hiç gönderilmez. Yalnız MFA'lı yönetici, geri açabilmek için kaldırılanı görür.
 

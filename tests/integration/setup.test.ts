@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { asSystem } from '@/server/db/system';
 import { closeDb } from '@/server/db/client';
 import { enterWithCode } from '@/server/auth/door';
@@ -7,11 +7,25 @@ import { bootstrapOwner, setupAvailable } from '@/server/auth/setup';
 const TOKEN = 'kurulum-anahtari-0123456789abcdef-0123456789';
 const ctx = (ip: string) => ({ ip, userAgent: 'vitest' });
 
+// Setup is open only while no owner exists. Other test files create owners,
+// so each test here sets that precondition itself and restores it afterwards.
+let parked: string[] = [];
+beforeEach(async () => {
+  parked = (
+    await asSystem(
+      (tx) => tx<{ id: string }[]>`
+        update members set status = 'revoked' where role = 'owner' and status <> 'revoked'
+        returning id`,
+    )
+  ).map((r) => r.id);
+});
+
 afterEach(async () => {
   vi.unstubAllEnvs();
   await asSystem(async (tx) => {
     await tx`delete from members where display_name like 'kurulum %'`;
     await tx`delete from private.auth_attempts where bucket like 'setup:%'`;
+    await tx`update members set status = 'active' where id = any(${parked})`;
   });
 });
 afterAll(closeDb);

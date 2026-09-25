@@ -1,0 +1,254 @@
+.room {
+  display: grid;
+  gap: clamp(3rem, 8vw, 5rem);
+  max-width: 40rem;
+}
+
+.contents {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.contents ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+.contents a {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.5rem;
+  padding: 0.55rem 0;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.contents a:hover {
+  color: var(--ink);
+}
+
+.contents a span:first-child {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--accent);
+  padding-top: 0.15rem;
+}
+
+.entry {
+  display: grid;
+  gap: 0.75rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.compact {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 1.5rem;
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.count span {
+  color: var(--ink-3);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-4);
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+}
+
+.citation {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+
+.original {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+.labels {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+
+.note {
+  display: grid;
+  gap: 1.1em;
+  margin-top: 0.75rem;
+  font-size: var(--step-1);
+  line-height: 1.78;
+  color: var(--ink);
+  max-width: var(--measure);
+}
+
+.noteSmall {
+  display: grid;
+  gap: 0.8em;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  max-width: var(--measure);
+}
+
+.note blockquote,
+.noteSmall blockquote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--accent-deep);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+.quote {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--accent-deep);
+}
+
+.quote blockquote {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.source {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+  margin-top: 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  max-width: 26rem;
+}
+
+.sourceLink {
+  font-size: 1rem;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.sourceLink::after {
+  content: '';
+}
+
+.source:hover {
+  border-color: var(--accent-deep);
+}
+
+.sourceHint {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+
+.prompt {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  margin-top: 1.25rem;
+}
+
+.prompt p {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.45rem;
+  line-height: 1.35;
+}
+
+.marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.mark {
+  min-height: 2.75rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+}
+
+.mark:hover {
+  color: var(--ink-2);
+  text-decoration-color: var(--ink-3);
+}
+
+.mark[aria-pressed='true'] {
+  color: var(--ok);
+}
+
+.kind {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.divider {
+  width: 2.75rem;
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--accent-deep);
+}
+
+.footer {
+  display: grid;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+
+@media print {
+  .room {
+    max-width: none;
+  }
+  .entry {
+    break-inside: avoid-page;
+  }
+  .source {
+    border: 0;
+    padding: 0;
+  }
+  .sourceLink::after {
+    content: ' — ' attr(href);
+    font-size: 0.75rem;
+    color: #555;
+    overflow-wrap: anywhere;
+  }
+}

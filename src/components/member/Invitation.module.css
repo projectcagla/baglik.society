@@ -1,0 +1,38 @@
+.grid {
+  display: grid;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.item {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.item img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #08080a;
+}
+
+.item[data-format='hikaye'] img {
+  max-width: 22rem;
+}
+
+.item figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
+
+@media (min-width: 60rem) {
+  .grid {
+    grid-template-columns: 22rem 1fr 1fr;
+  }
+}

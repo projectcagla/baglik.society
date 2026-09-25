@@ -1,0 +1,141 @@
+.header {
+  padding: max(1rem, env(safe-area-inset-top)) var(--gutter) 0;
+  max-width: var(--wide);
+  margin: 0 auto;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3rem;
+}
+
+.brand {
+  display: block;
+  width: 8.5rem;
+  padding: 0.5rem 0;
+  text-decoration: none;
+}
+
+.brand img {
+  width: 100%;
+  height: auto;
+}
+
+.monogram {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: var(--ink-2);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.monogram:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.35rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav a {
+  display: inline-block;
+  padding: 0.7rem 0;
+  font-size: 0.9375rem;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.nav a:hover {
+  color: var(--ink-2);
+}
+
+.nav a[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--accent-deep);
+}
+
+.nav a[data-staff] {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+}
+
+.main {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 5rem) var(--gutter) 5rem;
+  animation: bs-fade-in 240ms var(--ease) both;
+}
+
+.footer {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) max(2rem, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+}
+
+.logout {
+  min-height: 2.75rem;
+  padding: 0 0.25rem;
+  background: none;
+  border: 0;
+  font-size: 0.9375rem;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+}
+
+.logout:hover {
+  color: var(--ink-2);
+  text-decoration-color: var(--ink-3);
+}
+
+@media (min-width: 48rem) {
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  /* brand, nav and monogram share one row */
+  .headerRow {
+    display: contents;
+  }
+  .brand {
+    order: 0;
+    width: 9.5rem;
+    margin-right: auto;
+  }
+  .nav {
+    order: 1;
+  }
+  .nav ul {
+    margin: 0;
+    gap: 0 1.75rem;
+  }
+  .monogram {
+    order: 2;
+  }
+}

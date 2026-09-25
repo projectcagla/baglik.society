@@ -1,0 +1,58 @@
+{
+  "name": "baglik-society",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.2.1",
+    "next": "^16.3.6",
+    "postgres": "^3.4.9",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sharp": "^0.35.4",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.6",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.9",
+    "server-only": "^0.0.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:migrate": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed.ts",
+    "db:seed:demo": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed-demo.ts",
+    "owner:create": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-owner.ts",
+    "invite:issue": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/issue-invite.ts",
+    "mfa:reset": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/mfa-reset.ts",
+    "links:check": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/link-check.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test",
+    "brand:derive": "node scripts/brand/derive-assets.mjs && node scripts/brand/build-mark.mjs"
+  }
+}

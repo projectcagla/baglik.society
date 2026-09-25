@@ -1,0 +1,273 @@
+.desk {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.subnav a {
+  display: inline-block;
+  padding: 0.6rem 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+}
+
+.subnav a:hover {
+  color: var(--ink-2);
+}
+
+.subnav a[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-3);
+  line-height: 1.1;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-raised);
+}
+
+.panel > h2,
+.panel > h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-2);
+}
+
+.panelWarn {
+  border-color: rgb(228 201 146 / 0.45);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.cols2,
+.cols3 {
+  display: grid;
+  gap: 1rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+}
+
+.stat {
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.stat strong {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.table th {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table td a {
+  text-decoration-color: var(--line-strong);
+}
+
+.items {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+}
+
+.itemHead a {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: center;
+}
+
+.tool {
+  min-height: 2.5rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 0.85rem;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+}
+
+.tool:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink-3);
+}
+
+.toolDanger:hover {
+  color: var(--bad);
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.pillOk {
+  border-color: rgb(169 211 184 / 0.5);
+  color: var(--ok);
+}
+
+.pillWarn {
+  border-color: rgb(228 201 146 / 0.5);
+  color: var(--warn);
+}
+
+.pillBad {
+  border-color: rgb(232 169 174 / 0.5);
+  color: var(--bad);
+}
+
+.secret {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+}
+
+.secret code {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  letter-spacing: 0.1em;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.specimen {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.specimen p:nth-child(1) {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+}
+
+.specimen p:nth-child(2) {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.35rem;
+}
+
+.specimen p:nth-child(3) {
+  font-size: 1.05rem;
+}
+
+.specimen p:nth-child(4) {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 48rem) {
+  .cols2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cols3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}

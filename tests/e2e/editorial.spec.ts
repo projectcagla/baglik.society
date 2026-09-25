@@ -187,3 +187,47 @@ test.describe('the film dossier', () => {
     await expect(page).toHaveURL(/\/filmler\/001-drive-my-car\/sonra$/);
   });
 });
+
+test.describe('hard conditions', () => {
+  test.use({ viewport: { width: 320, height: 568 } });
+
+  test('images blocked: the invitation still reads, nothing overflows', async ({ page }) => {
+    await loginAs(page, 'member');
+    await page.route(/\.(webp|png|jpe?g|svg)(\?|$)/, (r) => r.abort());
+    await page.goto('/geceler/2');
+    const hero = page.locator('section[aria-labelledby="gece-baslik"]');
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveText('canavar');
+    await expect(hero).toContainText('27 eylül 2026 · pazar · 19.30');
+    await expect(hero.getByRole('link', { name: /ön okumaya geç/ })).toBeVisible();
+    const extra = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(extra).toBeLessThanOrEqual(0);
+  });
+
+  test('slow network: the reading arrives as server HTML and is usable early', async ({ page }) => {
+    await loginAs(page, 'member');
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', {
+      offline: false,
+      latency: 400,
+      downloadThroughput: 50_000, // ≈ 400 kbit/s
+      uploadThroughput: 20_000,
+    });
+    const started = Date.now();
+    await page.goto('/filmler/002-canavar/okuma', { waitUntil: 'commit' });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('canavar', {
+      timeout: 15_000,
+    });
+    await expect(page.getByRole('heading', { name: 'Gündelik hayatın ayrıntıları' })).toBeVisible();
+    const ms = Date.now() - started;
+    expect(ms, `first readable screen after ${ms} ms`).toBeLessThan(15_000);
+    await cdp.send('Network.emulateNetworkConditions', {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1,
+    });
+  });
+});

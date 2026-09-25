@@ -5,6 +5,7 @@ import https from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
 import type { LookupOptions } from 'node:dns';
 import { asSystem } from '@/server/db/system';
+import { linkCheckEnabled } from '@/server/env';
 
 // Source link health. Never deletes or rewrites a link — it only records what
 // the source answered so the editor can decide. Polite by design: sequential,
@@ -245,6 +246,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function checkLinks(
   opts: { ids?: string[]; limit?: number; staleHours?: number } = {},
 ): Promise<number> {
+  // a host that cannot guarantee socket-level address checks turns this off
+  if (!linkCheckEnabled()) return 0;
   const limit = Math.min(opts.limit ?? 20, 50);
   const stale = opts.staleHours ?? 24 * 6;
   const rows = await asSystem((tx) =>

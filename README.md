@@ -72,14 +72,22 @@ Kendi sunucunda: `npm ci && npm run build && npm start`, önünde TLS sonlandır
 
 ## gündelik kullanım (masa)
 
-- **Film:** `masa → filmler → yeni film` ile taslak oluşur. Künyeyi doldur, kaynak ekle (Türkçe özgün not, özgün bağlantı, spoiler, hak durumu), "yayımla" de. "Sonra" katmanını gösterimden sonra aç.
+- **Film:** `masa → filmler → yeni film` ile taslak oluşur. Künyeyi doldur, kaynak ekle, "yayımla" de. "Sonra" katmanını gösterimden sonra elle aç; gece başlamadan (ya da film "izlendi" olmadan) veritabanı açmaz.
+- **Yeni kaynak (10–15 dk):** dört kısa bölüm var: kaynak (katman, başlık, özgün bağlantı), künye, editoryal ("neden bu kaynak", Türkçe özgün not, spoiler), haklar. Geri kalanı "isteğe bağlı alanlar"da. Yarım form cihazda saklanır. Kaynak sayfasındaki **yayın öncesi denetim** eksik maddeyi söyler; sunucu da aynı listeyle reddeder. Bağlantıyı açıp künyeyi kaynağın kendisinden doğruladıysan **"künyeyi ve bağlantıyı kontrol ettim"** de. Bağlantı ya da künye değişirse onay düşer. "Üye gibi gör" veritabanında üye yetkisiyle çalışır.
+- **Editör kuyruğu (masa ana sayfası):** üye bildirimi ("bağlantı açılmıyor"), açık editör notu, kırık/belirsiz bağlantı, insan onayı bekleyen kaynak. Hiçbiri kendiliğinden düzelmez.
 - **Gece:** `masa → geceler → yeni gece` (Istanbul saatiyle) oluştur, filmi seç, durumu "davet gönderildi" yap, davetlileri seç.
 - **Konum:** gece sayfasında gerçek konumu gir ve açılış zamanını ayarla (ya da "şimdi aç"). Bilinmiyorsa boş bırak; üyeler "konum bilgisi henüz paylaşılmadı" görür. "Konum açıldı bildirimi" e-posta sağlayıcısı tanımlıysa gönderilir, değilse hiçbir şey gönderilmez ve durum kayda geçer.
 - **Üye:** `masa → üyeler` ile ekle. Tek kullanımlık kod bir kez gösterilir; kişiye özel ilet. Kodu kaybederse "yeni davet kodu üret", ayrılırsa "üyeliği iptal et" (kodları ve oturumları anında düşer).
 
 ## v1'de biten
 
-Kapı ve kişiye özel kodlar · oturumlar, rate limit, yönetici TOTP · RLS ile rol/yetki · oda · film dizini ve arşiv · okuma odası (yazdır/pdf) · "sonra" katmanı (oturum notları, tartışma, ileri okuma, moderasyon) · geceler, RSVP (son tarih, kapasite), konum açılma kuralı, `.ics` · davetiye 9:16 / 4:5 / kart (PNG/JPG) · defter (özel, isteğe bağlı paylaşım), kaydedilenler, okudum işaretleri · profil (anahtar yenileme, oturumlar, veri indirme) · masa: film/kaynak/soru/not CMS'i, taslak/yayın, üye gibi önizleme, taslak koruma, Markdown dışa aktarım, geceler, davetliler, bildirim kayıtları, bağlantı sağlığı, işlem kaydı, toplu davet · e-posta ile kod kurtarma (Resend; yoksa dürüst "sağlayıcı yok").
+Kapı ve kişiye özel kodlar · oturumlar, rate limit, yönetici TOTP · RLS ile rol/yetki · oda · film dizini ve arşiv · okuma odası (yazdır/pdf) · "sonra" katmanı (oturum notları, tartışma, ileri okuma, moderasyon) · geceler, RSVP (son tarih, kapasite), konum açılma kuralı, `.ics` · davetiye 9:16 / 4:5 / kart (PNG/JPG) · defter (özel, isteğe bağlı paylaşım), sonra okunacaklar, okudum işaretleri · profil (anahtar yenileme, oturumlar, veri indirme) · masa: film/kaynak/soru/not CMS'i, taslak/yayın, üye gibi önizleme, taslak koruma, Markdown dışa aktarım, geceler, davetliler, bildirim kayıtları, bağlantı sağlığı, işlem kaydı, toplu davet · e-posta ile kod kurtarma (Resend; yoksa dürüst "sağlayıcı yok").
+
+## v1.1: editoryal öncelik
+
+Yeni özellik sayısı değil, önce → gece → sonra deneyimi: okuma sayfası (ilk ekran, kaynak başına gerekçe ve spoiler sırası, okudum / sonra oku, kaldığın yer, bağlantı bildirimi, JS'siz okuma), gece sayfası (davetiye ritmi, davet durumu, ön okumaya geçiş, net RSVP sonucu), sonra sayfası (editörün notu, masadan kalan sorular, kronolojik tartışma, ileri okuma, gecenin kaydı), film dosyası, masada yayın öncesi denetim, insan onayı ve kuyruk, geri alınabilir moderasyon. Güvenlik: RSVP yarışı, bağlantı denetiminde DNS rebinding / IPv6 yazımları, veritabanı düzeyinde önizleme, spoiler ve "sonra" korumaları, açık yönlendirme süzgeci. Ayrıntı ve gerekçeler: `docs/ARCHITECTURE.md` ("editoryal kurallar"), `docs/DESIGN.md` ("editoryal öncelik").
+
+**Migrasyon:** `npm run db:migrate` `0003_editorial.sql`'i uygular. Ekleyici bir migrasyon: yeni sütunlar boş başlar, spoiler kısıtı `NOT VALID` (mevcut satırlara dokunmaz), yalnız PDF'lerden gelen ve editörün not yazmadığı satırlara köken / soru notu ekler. Geri almak için `db/rollback/0003_editorial.down.sql`, adımları içindedir. Seed, var olan film ve gecelere hiç dokunmaz (`seed.test.ts`).
 
 ## sonraki sürüm (backlog)
 
@@ -94,5 +102,7 @@ Kapı ve kişiye özel kodlar · oturumlar, rate limit, yönetici TOTP · RLS il
 
 - Bu ortamdan dış sitelere erişim kapalıydı. Seed'deki 12 kaynak bağlantısı PDF'lerden birebir alındı ama **canlı doğrulanmadı**. Durumları "denetlenmedi" olarak başlar; yayındaki haftalık denetim (ya da `npm run links:check`) günceller.
 - PDF'lerde bulunmayan alanlar (süre, ülke, 001'in gösterim tarihi, 001 kaynaklarının spoiler düzeyi, Screen Talk yılı) bilerek boş bırakıldı.
+- 001'in PDF'i erken seçkidir (Murakami kitabı, Çehov oyunu, film önerileri). Kulübün sonraki, makale ve söyleşi ağırlıklı minimalist sürümü bu depoda yok. O satırlar editör kuyruğunda "erken PDF seçkisinden…" notuyla bekliyor; Word dosyası gelmeden tahminle değiştirilmedi.
 - Notlar uçtan uca şifreli değildir. Arayüz bunu açıkça söyler.
-- Hukuki metinler (aydınlatma, saklama süresi) kulüp tarafından ayrıca hazırlanmalıdır.
+- Hukuki metinler (aydınlatma, açık rıza, saklama süresi) hukuk danışmanı incelemesi gereken ayrı bir iştir. Uygulama KVKK uyumu iddia etmez.
+- **Depo görünürlüğü:** GitHub deposu şu an herkese açık. Seed dosyası (`db/seed/content.ts`) iki filmin programını, 2. gecenin tarihini ve küratörün Türkçe notlarını içeriyor. Gerçek konum, üye adı, kod ya da anahtar depoda yok. Bu içeriklerin açık kalıp kalmayacağı kulübün kararı; seçenekler `docs/ARCHITECTURE.md` → "depo ve yayın stratejisi" bölümünde.

@@ -14,18 +14,18 @@
 /                       kapı (tek alan)
 /kayip-anahtar          tek kullanımlık kod iste
 └─ üye alanı
-   /oda                 sıradaki gece · son eklenen · arşivden tek satır
-   /filmler             sırada · arşiv (· öneriler yalnız masaya)
-     /[no-ad]           önce: seçki dizini, künye, geceler
-       /okuma           okuma odası (akışkan HTML, yazdır/pdf)
-       /sonra           oturum notları · tartışma · ileri okuma  (yayımlanınca)
+   /oda                 yalnız sıradaki gece: ön okumaya geç · katılımını bildir (· arşivden tek satır)
+   /filmler             sırada · arşiv (gösterim sırasıyla; · öneriler yalnız masaya)
+     /[no-ad]           film dosyası: önce · gece · sonra, künye, "senin için" (yalnız sana)
+       /okuma           önce: gösterim öncesi okuma (yazdır/pdf, JS'siz okunur)
+       /sonra           sonra: editörün notu · masadan kalan sorular · tartışma · ileri okuma · gecenin kaydı
    /geceler             yaklaşan · geçmiş (yalnız davetli olunanlar)
-     /[n]               davet: tarih, konum durumu, katılım, takvim
+     /[n]               gece: dijital davetiye, davet durumu, katılım, takvim, ön okumaya geçiş
        /davetiye        9:16 · 4:5 · metin kartı (png/jpg)
-   /defter              kişisel notlar · paylaşılanlar · kaydedilenler
+   /defter              kişisel notlar · paylaşılanlar · sonra okunacaklar
    /profil              ad/e-posta · kişisel anahtar · oturumlar · verilerin
    /hosgeldin           ilk girişte kişisel anahtar
-   /masa                özet · filmler · geceler · üyeler · bağlantılar · kayıt · güvenlik
+   /masa                özet + editör kuyruğu · filmler · geceler · üyeler · bağlantılar · kayıt · güvenlik
 ```
 
 Üst düzeyde dört bölüm var: `oda · filmler · geceler · defter`. Monogram profile, `masa` yalnızca yetkiliye. Hamburger menü yok. 320 px'de bile dört kelime tek satıra sığıyor.
@@ -42,9 +42,21 @@ Brief ana ruhu koruyan iki gerekçeli alternatif istiyordu. Ortam otomatik çal�
 
 ### oda
 
-**A: davetiye ritmi (uygulandı).** Ortalanmış tek sütun: `sıradaki gece · 2. film gecesi`, mor `002`, büyük serif `canavar`, italik yönetmen, kısa çizgi, tarih, "2 gün sonra", kısa çizgi, konum cümlesi. Ardından iki eylem: `ön okumaya geç` ve `katılımını bildir`. Altta ince bir çizgiyle ayrılan `son eklenen` ve tek satırlık `arşiv — 001 / drive my car` var. Dashboard kartı yok. *Gerekçe:* Onaylanan 2. gece davetiyesinin dilini içeriye taşıyor. Ekranda tek baskın karar var.
+**A: davetiye ritmi (uygulandı).** Ortalanmış tek sütun: `sıradaki gece · 2. film gecesi`, mor `002`, büyük serif `canavar`, italik yönetmen, kısa çizgi, tarih, "2 gün sonra", kısa çizgi, konum cümlesi. Ardından iki eylem: `ön okumaya geç` ve `katılımını bildir`. Altta ince bir çizgiyle ayrılan tek satırlık `arşiv — 001 / drive my car` var. v1.1'de `son eklenen` kutusu kaldırıldı: oda haber panosu değil, sıradaki gecenin kapısı. Dashboard kartı yok. *Gerekçe:* Onaylanan 2. gece davetiyesinin dilini içeriye taşıyor. Ekranda tek baskın karar var.
 
 **B: editoryal sol hizalı.** Solda büyük film adı ve künye, sağ sütunda (masaüstü) tarih/konum/eylem. Mobilde tek sütun, sola hizalı. *Gerekçe:* Uzun film adlarında daha dengeli. Festival kataloğu hissi daha güçlü. *Neden seçilmedi:* Davetiyeyle aynı ritmi kurmuyor. Film ve okuma sayfaları zaten bu sol hizalı editoryal düzeni kullanıyor, odanın ayrışması iyi.
+
+## editoryal öncelik (v1.1): önce → gece → sonra → arşiv
+
+**Okuma sayfası (önce).** Telefonun ilk ekranında yalnız şunlar var: `002 / gösterim öncesi`, film adı, yönetmen · yıl, üç belgenin (önce · gece · sonra) kısa gezintisi, gerçek kaynak sayısı ve bu sayfadaki notların okuma süresi (sayfanın kendi metninden hesaplanır; özgün metinlerin süresi yalnız editör ölçtüyse ayrıca yazılır), ardından içindekiler. Her kaynakta sıra hep aynı: sıra numarası, Türkçe küratör başlığı, özgün başlık (başlıkta zaten geçiyorsa tekrar yazılmaz), künye (yayın · yazar · biçim · yıl · süre), tür · dil · spoiler durumu, "neden bu kaynak", Türkçe özgün not (170 kelimeyi aşan not ilk paragraftan sonra `<details>` ile katlanır; JS'siz açılır), spoiler uyarısı, sonra tek ve açıkça etiketlenmiş özgün bağlantı. Spoiler uyarısı belgede bağlantıdan önce gelir; CSS ile gizlenen bir şey yok. `okudum` / `sonra oku` yalnız üyenin kendisine ait. "Kaldığın yer" yalnız cihazda (localStorage) tutulur, sunucuya iz gitmez. "Bağlantı açılmıyor mu?" editör kuyruğuna düşer. Görünüm bağımsız bir dergi sayfası gibi: Cormorant başlıklar, 18 px Inter gövde, 1,78 satır aralığı.
+
+**Gece sayfası.** Onaylı davetiyenin dijital karşılığı: ölçülü boyutta onaylı portal (`/brand/portal.webp`, telefonda ~5,5–7,5 rem), `2. film gecesi`, mor `002`, `canavar`, `hirokazu kore-eda`, `27 eylül 2026 · pazar · 19.30` (Europe/Istanbul), "konum etkinlik günü davetlilere iletilecektir", davet durumu ("davetlisin · katılımını henüz bildirmedin"), `ön okumaya geç`. Katılım sonucu açıkça yazılır ("kaydedildi: geliyorum."). Aynı cevabın tekrarı hiçbir şeyi değiştirmez.
+
+**Sonra sayfası.** Beş bölüm: (1) editörün notu, isteğe bağlı, 80–180 kelime, insan yazar; boşken üye bu bölümü hiç görmez; (2) masadan kalan sorular; (3) her sorunun altında sakin, kronolojik tartışma: en çok iki yanıt derinliği, beğeni/sayaç yok, adlı ya da adsız, düzenleme yok, geri çekme var; (4) spoiler uyarılı ileri okuma; (5) gecenin kaydı: yalnız gerçekleşen gece (tarih kayıtlı değilse "tarihi kayda geçmedi"), seçkiye bağlantı, soru ve katkı sayısı. Fotoğraf ve katılımcı adı yok.
+
+**Film dosyası.** `/filmler/[no-ad]` üç belgeyi tek yerde toplar. Yanda künye ve "senin için": kaç kaynağı okuduğun, sonra okunacaklar, bu filme dair defter notların. Yalnız sana görünür.
+
+**Masa.** Kaynak formu dört kısa bölüm (kaynak · künye · editoryal · haklar) ve kapalı bir "isteğe bağlı alanlar" bölümünden oluşuyor. Zorunlular `*` ile işaretli. Yarım bırakılan form cihazda saklanıyor (DraftKeeper). Kaynak sayfasında yayın öncesi denetim listesi ve "künyeyi ve bağlantıyı kontrol ettim" onayı var. Masa ana sayfasında editör kuyruğu.
 
 ## mobil yaklaşım
 
@@ -63,15 +75,16 @@ Brief ana ruhu koruyan iki gerekçeli alternatif istiyordu. Ortam otomatik çal�
 
 ## ekran görüntüleri
 
-`docs/screenshots/` (production build, Chromium, 2x):
+`docs/screenshots/` (v1.1, production build, Chromium, 1x, üye görünümü; masa editör görünümü; e2e deneme verisi, gerçek hesap ya da konum yok):
 
-| | |
-| --- | --- |
-| kapı 390 / 320 / 1440 | `kapi-390.webp`, `kapi-320.webp`, `kapi-1440.webp` |
-| oda 390 / 1440 | `oda-390.webp`, `oda-1440.webp` |
-| film ve okuma odası | `film-1440.webp`, `okuma-390.webp` |
-| sonrası (001) | `sonra-390.webp` |
-| gece / davet | `gece-390.webp`, `davetiye-1440.webp` |
-| defter, masa | `defter-390.webp`, `masa-390.webp` |
+| sayfa | 320 | 390 | 1440 |
+| --- | --- | --- | --- |
+| kapı | `kapi-320.webp` | `kapi-390.webp` | `kapi-1440.webp` |
+| oda | `oda-320.webp` | `oda-390.webp` | `oda-1440.webp` |
+| canavar · okuma | `canavar-okuma-320.webp` | `canavar-okuma-390.webp` | `canavar-okuma-1440.webp` |
+| canavar · gece | `canavar-gece-320.webp` | `canavar-gece-390.webp` | `canavar-gece-1440.webp` |
+| drive my car · sonra | `drive-my-car-sonra-320.webp` | `drive-my-car-sonra-390.webp` | `drive-my-car-sonra-1440.webp` |
+| defter | `defter-320.webp` | `defter-390.webp` | `defter-1440.webp` |
+| masa · yeni kaynak | `masa-yeni-kaynak-320.webp` | `masa-yeni-kaynak-390.webp` | `masa-yeni-kaynak-1440.webp` |
 
 Test her çalıştığında tüm sayfaların tam boy görüntüleri `artifacts/screenshots/` klasörüne yeniden üretiliyor (CI'da artefakt olarak saklanıyor).

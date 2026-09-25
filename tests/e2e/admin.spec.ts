@@ -42,6 +42,8 @@ test.describe.serial('desk', () => {
     await expect(member.getByText('taslak bir okuma')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'yayımla' }).first().click();
+    // wait for the server to have published it (the checklist passes), then look as the member
+    await expect(page.getByRole('button', { name: 'taslağa al' }).first()).toBeVisible();
     await member.reload();
     await expect(member.getByRole('heading', { name: 'taslak bir okuma' })).toBeVisible();
     await other.close();

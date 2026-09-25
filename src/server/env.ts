@@ -12,6 +12,8 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM: z.string().optional(),
   CRON_SECRET: z.string().min(24).optional(),
+  /** "off" keeps the link checker from making any outbound request (see ARCHITECTURE). */
+  LINK_CHECK: z.enum(['on', 'off']).optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 
@@ -31,3 +33,5 @@ export function env(): Env {
 }
 
 export const isProduction = () => process.env.NODE_ENV === 'production';
+
+export const linkCheckEnabled = () => env().LINK_CHECK !== 'off';

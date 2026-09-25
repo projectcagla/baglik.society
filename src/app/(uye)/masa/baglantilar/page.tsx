@@ -7,6 +7,7 @@ import { hostOf, programNo } from '@/lib/text';
 import { checkLinkAction } from '@/server/actions/desk';
 import { requireStaff } from '@/server/auth/viewer';
 import { linkHealth } from '@/server/dal/desk';
+import { linkCheckEnabled } from '@/server/env';
 
 export const metadata: Metadata = { title: 'masa · bağlantılar' };
 
@@ -21,13 +22,18 @@ const TEXT: Record<string, [string, string]> = {
 export default async function LinksPage() {
   const viewer = await requireStaff();
   const rows = await linkHealth(viewer);
+  const enabled = linkCheckEnabled();
   return (
     <>
       <div className={styles.head}>
         <h1 className={styles.title}>bağlantılar</h1>
-        <form action={checkLinkAction}>
-          <button className={`${ui.button} ${ui.small}`}>şimdi denetle (en çok 15)</button>
-        </form>
+        {enabled ? (
+          <form action={checkLinkAction}>
+            <button className={`${ui.button} ${ui.small}`}>şimdi denetle (en çok 15)</button>
+          </form>
+        ) : (
+          <span className="meta">otomatik denetim bu kurulumda kapalı (LINK_CHECK=off)</span>
+        )}
       </div>
       <p className="meta">
         haftada bir otomatik denetlenir. siteler arasında bekleyerek, tek tek ve kısa zaman aşımıyla

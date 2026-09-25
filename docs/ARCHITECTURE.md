@@ -41,7 +41,9 @@
 | `/masa/geceler/[id]`, `/masa/uyeler/**`, `/masa/kayit` | 303 | 403 | 403 (liste salt okunur) | MFA yoksa → `/masa/guvenlik` |
 | `/api/cron/link-check` | Bearer `CRON_SECRET` yoksa 404 | | | |
 
-Anonim bir ziyaretçi var olan ve olmayan her özel adres için aynı 303 cevabını alır. URL tahmini hiçbir şey söylemez. Dönüş adresi, 10 dakikalık HTTP-only bir çerezde saklanır; sorgu parametresine yazılmaz.
+Anonim bir ziyaretçi var olan ve olmayan her özel adres için aynı 303 cevabını alır. URL tahmini hiçbir şey söylemez. Dönüş adresi, 10 dakikalık HTTP-only bir çerezde saklanır; sorgu parametresine yazılmaz. Giriş, MFA ve form eylemlerinden sonraki her dönüş adresi aynı `safeReturnPath` süzgecinden geçer (yalnız bilinen bölümler; `//`, `\`, `..`, şema ve satır sonu reddedilir).
+
+Bu tablo `tests/e2e/authz-matrix.spec.ts` içinde gerçek HTTP ile sınanıyor: anonim, davetli üye, davetsiz üye, editör, kurucu (MFA'sız) ve oturumu açıkken iptal edilen üye; okuma, açık ve kapalı "sonra", taslak film, gece, `.ics`, davetiye görseli, Markdown dışa aktarım ve masa. Aynı testte taslak kaynak, yayımlanmamış "sonra" kaynağı, taslak film adı ve açılmamış konum için HTML'de **ve** RSC yükünde (`RSC: 1`) sızıntı aranıyor. MFA'lı yönetici hücreleri `location.test.ts` ve `admin.spec.ts` içinde.
 
 ## rol ve izin matrisi (veritabanında uygulanan)
 
@@ -60,6 +62,24 @@ Anonim bir ziyaretçi var olan ve olmayan her özel adres için aynı 303 cevab�
 | contributions | "sonra" açıkken okuma/yazma, kendi katkısını geri çekme | aynı | aynı | + moderasyon | aynı |
 | audit_logs, notification_deliveries | – | – | – | okuma | okuma |
 | private.* (kodlar, oturumlar, MFA) | – | – | – | – | – (yalnız auth modülü) |
+
+## editoryal kurallar (v1.1, veritabanında)
+
+`db/migrations/0003_editorial.sql` ekleyici ve veriyi koruyan bir migrasyon. Elle geri alma adımları `db/rollback/0003_editorial.down.sql` dosyasında.
+
+| kural | nerede | neden |
+| --- | --- | --- |
+| RSVP kapasitesi etkinlik satırı kilitlenerek denetlenir | `app.set_rsvp` (`select … for update`) | READ COMMITTED'da iki eşzamanlı "geliyorum" son koltuğu birlikte alabiliyordu |
+| "üye gibi gör" üye yetkisiyle çalışır | `app.role()`, `app.preview = 'member'`; MFA da kapanır | önizleme JS/CSS süzmesi değil; veritabanı üyeye ne veriyorsa o |
+| spoiler'lı kaynak "önce" katmanında yayımlanamaz | `resources_no_spoiler_before` (NOT VALID: eski satırlara dokunmaz, her yeni yazımı denetler) | CSS ile saklamak güvenlik değildir |
+| "sonra" katmanı gösterim olmadan açılamaz | `films_after_guard` tetikleyicisi: film `izlendi/arsiv` ya da bağlı bir gece başlamış olmalı | başlangıç saati geçmesi yayın demek değil; açmak her zaman editörün kararı |
+| katkı metni sonradan değiştirilemez | `revoke update (body) on contributions` | sessiz düzenleme yok; üye isterse geri çeker (karar: düzenleme yerine geri çekme) |
+| üye kırık bağlantı bildirebilir | `app.report_link()`: yalnız görebildiği yayındaki kaynak, üye/kaynak başına günde bir | editör kuyruğuna düşer; analitik yok |
+| kaynağın kökeni, gerekçesi, son insan onayı | `rationale`, `source_minutes`, `provenance`, `approved_at/by`, `review_note` | neyin nereden geldiği ve kimin doğruladığı kayıtta; editör notu üye yanıtından sunucuda çıkarılır |
+
+Yayın öncesi denetim (`src/lib/publish-check.ts`): başlık, tek ve açık bir http(s) bağlantı, hak durumu, özgün özet seçiliyse Türkçe not, açıkça seçilmiş spoiler düzeyi, spoiler'a uygun katman. Aynı işlev masada listeyi çiziyor ve sunucuda yayımı reddediyor. Künye ya da bağlantı değişince insan onayı kendiliğinden düşer.
+
+Moderasyon geri alınabilir: kaldırılan katkı "geri aç", gizlenen paylaşılmış not "geri aç" ile döner, her adım `audit_logs`'ta (`contribution.moderate`, `journal.moderate`). Geri çekilen ya da kaldırılan katkının metni üyelere sunucudan hiç gönderilmez. Yalnız MFA'lı yönetici, geri açabilmek için kaldırılanı görür.
 
 ## veri modeli (özet)
 
@@ -109,15 +129,33 @@ Sayfa, takvim dosyası (`.ics`) ve bildirim e-postası aynı fonksiyonu kullanı
 | harici video izleme | gömülü video yok, yalnız dış bağlantı (`noopener noreferrer`) | |
 | referrer sızıntısı | `Referrer-Policy: same-origin`, dış bağlantılarda `noreferrer` | |
 | e-posta sırrı sızıntısı | konum e-postaya yalnız yönetici açıkça işaretlerse girer; kurtarma e-postasında film/gece bilgisi yok | |
-| SSRF (editörün girdiği kaynak URL'si sunucudan çağrılıyor) | yalnız http(s) ve 80/443, kimlik bilgili URL yok, her yönlendirme adımı elle izleniyor ve DNS sonucu özel/loopback/link-local/CGNAT aralıklarına karşı denetleniyor | `ssrf.test.ts` |
+| SSRF (editörün girdiği kaynak URL'si sunucudan çağrılıyor) | yalnız http(s) ve 80/443, kimlik bilgili URL yok; adresi **soketin kendisi** denetliyor (Node `lookup` kancası), yani denetlenen adres bağlanılan adres: DNS rebinding / TOCTOU yok. Özel, loopback, link-local, CGNAT, çoklu yayın, belgeleme aralıkları ve IPv6 içine gömülü IPv4 (`::ffff:`, `::a.b.c.d`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`) reddediliyor. Onluk/onaltılık/kısaltılmış IPv4 yazımları URL ayrıştırıcıda normalleşip aynı denetime giriyor. Yönlendirmeler elle, en çok 5 adım ve her adımda yeniden denetimle izleniyor | `ssrf.test.ts` (gerçek yerel sunucuya hiç istek gitmediği dahil) |
+| RSVP yarışı (son koltuk) | etkinlik satırı kilidi, aynı cevabı tekrarlamak idempotent | `rsvp-concurrency.test.ts`: düzeltmeden önce başarısızdı |
+| önizlemeden taslak sızması | önizleme veritabanında üye yetkisiyle; HTML ve RSC yükünde taslak aranıyor | `editorial.test.ts`, `authz-matrix.spec.ts` |
+| açık yönlendirme | tüm dönüş adresleri `safeReturnPath` ile | `return-path.test.ts` |
 | webhook / cron | `CRON_SECRET` zamanlama güvenli karşılaştırma, yanlışsa 404 | `public.spec.ts` |
 | clickjacking | `frame-ancestors 'none'`, `X-Frame-Options: DENY` | |
 | yönetici hesabı ele geçirme | TOTP, 12 saatlik tazelik, DB tarafında MFA şartı, kurucu dışında kimse yönetici atayamaz | `rls.test.ts`, `admin.spec.ts` |
 
 Kapsam dışı: sağlayıcı (Vercel/Supabase) personeli ya da veritabanına doğrudan erişimi olan biri özel notları okuyabilir. Notlar uçtan uca şifreli değil ve uygulama bunu arayüzde açıkça söylüyor.
 
+Bağlantı denetimi barındırma ortamı hakkında bir varsayım yapıyor: sunucunun giden bağlantıları Node'un kendi soketleriyle ve bu kancadan geçerek kuruluyor. Ortam kendi çıkış vekilini zorunlu kılıyorsa (ör. kurumsal proxy) denetim o vekilin arkasındaki adresi göremez. O durumda `LINK_CHECK=off` ile denetim tümden kapatılır (haftalık cron da masadaki "bağlantıyı denetle" düğmesi de ağa hiç çıkmaz; bağlantılar "denetlenmedi" kalır ve üye bildirimleri kuyruğa düşmeye devam eder) ya da yalnız dış ağa çıkan, iç ağa kapalı bir çıkış vekili kullanılır.
+
+## depo ve yayın stratejisi
+
+Depo şu an herkese açık (GitHub, 25 Eylül 2026'da denetlendi). Görünürlük bu çalışmada değiştirilmedi. Depoda olanlar ve olmayanlar:
+
+- **Hiçbir zaman yok:** gerçek konum, üye adı / e-postası, giriş kodu, anahtar, pepper, TOTP sırrı, `.env`. Konum yalnız yönetici tarafından üretim veritabanına girilir. Testler ve ekran görüntüleri yalnız `example.test` adresli deneme hesaplarını kullanır.
+- **Var:** marka dosyaları, iki filmin programı (001, 002), 2. gecenin tarihi ve saati (davetiyede de yazıyor), küratörün iki PDF'ten aktarılan Türkçe notları ve kaynak listesi (`db/seed/content.ts`).
+
+Seçenekler (karar kulübün):
+
+1. **Depoyu özel yapmak** (önerilen, en basit). Kod, testler ve CI olduğu gibi çalışır. Geçmişteki commit'ler de özel olur.
+2. **Açık kalıp içeriği ayırmak.** Seed içeriği depo dışındaki özel bir JSON'dan okunur, testler sentetik içerikle çalışır. Ancak şimdiye kadarki commit geçmişi içeriği zaten taşıyor. Tam ayrım için geçmişin yeniden yazılması gerekir; bu, sahibinin onayı olmadan yapılmaz.
+3. **Bilerek açık bırakmak.** Programın ve notların zaten davetiyeyle paylaşıldığı kabul edilir. Gelecek gecelerin tarihleri ve yeni editoryal metinler depoya değil, yalnız masadan üretim veritabanına girilir. Seed bir kez çalıştıktan sonra içerik masada yaşar.
+
 ## KVKK odaklı hijyen
 
 - Toplanan veri: ad, isteğe bağlı e-posta, davet/katılım, kendi notları, okuma işaretleri. IP adresi saklanmıyor, yalnızca pepper'lı özeti 2 gün tutuluyor. Tarayıcı bilgisi olarak yalnızca kaba bir etiket ("iPhone · Safari") kaydediliyor.
 - Üye kendi kayıtlarını `/profil/veri` üzerinden JSON olarak indirebiliyor. Yönetici, silme talebinde üyeyi kalıcı olarak silebiliyor (notlar, katılım ve oturumlar da silinir).
-- Bu belge hukuki metin değildir. Aydınlatma metni ve saklama süreleri kulüp yöneticisi tarafından hukuken gözden geçirilmelidir.
+- Bu belge hukuki metin değildir ve KVKK uyumu iddia etmez. Aydınlatma metni, açık rıza gereken durumlar ve saklama süreleri **hukuk danışmanı incelemesi gereken ayrı bir iş** olarak açık duruyor.

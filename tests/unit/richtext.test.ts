@@ -31,6 +31,13 @@ describe('editorial rich text', () => {
     expect(out).toContain('rel="noopener noreferrer external"');
   });
 
+  it('a link target cannot break out of its attribute', () => {
+    const out = html('[x](https://a.example/"><script>alert(1)</script>)');
+    expect(out).not.toContain('<script');
+    const attr = html('[x](https://a.example/"onmouseover="alert(1))');
+    expect(attr).not.toMatch(/\sonmouseover=/);
+  });
+
   it('renders emphasis', () => {
     expect(html('*italik* ve **kalın**')).toBe(
       '<div><p><em>italik</em> ve <strong>kalın</strong></p></div>',

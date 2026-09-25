@@ -123,6 +123,13 @@ export function ResourceForm({
         <Text name="duration_note" label="süre" defaultValue={r?.duration_note} hint="ör. 47 dk" />
       </div>
       <Text
+        name="source_minutes"
+        label="özgün metnin okuma süresi (dk)"
+        defaultValue={r?.source_minutes ?? ''}
+        inputMode="numeric"
+        hint="yalnızca kendin ölçtüysen; tahmin yazma"
+      />
+      <Text
         name="url"
         type="url"
         label="özgün bağlantı"
@@ -149,6 +156,13 @@ export function ResourceForm({
           hint="paywall, ülke kısıtı…"
         />
       </div>
+      <Area
+        name="rationale"
+        label="neden bu kaynak (2–3 cümle)"
+        defaultValue={r?.rationale}
+        rows={3}
+        hint="üyeye bu kaynağı neden seçtiğini söyler; okuma sayfasında notun üstünde durur"
+      />
       <Area
         name="note"
         label="türkçe özgün not (1–3 paragraf)"
@@ -187,6 +201,20 @@ export function ResourceForm({
           label="hak notu"
           defaultValue={r?.rights_note}
           hint="izin/lisans kaynağı; çeviri için zorunlu"
+        />
+      </div>
+      <div className={styles.cols2}>
+        <Text
+          name="provenance"
+          label="köken"
+          defaultValue={r?.provenance}
+          hint="nereden geldi: pdf adı, editör önerisi…"
+        />
+        <Text
+          name="review_note"
+          label="editör notu (üyeler görmez)"
+          defaultValue={r?.review_note}
+          hint="doğrulanacak ya da karar bekleyen konu"
         />
       </div>
       <Text

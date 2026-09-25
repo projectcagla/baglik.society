@@ -41,8 +41,8 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 });
 
 /** The identity handed to Postgres for row level security. */
-export function actorOf(v: Viewer): DbActor {
-  return { memberId: v.id, mfa: v.mfaFresh };
+export function actorOf(v: Viewer, opts: { preview?: boolean } = {}): DbActor {
+  return { memberId: v.id, mfa: v.mfaFresh, preview: !!opts.preview && v.isStaff };
 }
 
 export async function currentPath(): Promise<string> {

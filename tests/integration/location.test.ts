@@ -74,7 +74,10 @@ describe('location release', () => {
     // only the admin with a fresh second factor can read the table itself
     const adminRows = await asMember(
       { memberId: admin.id, mfa: true },
-      (tx) => tx<{ location_text: string }[]>`select location_text from event_private`,
+      (tx) =>
+        tx<
+          { location_text: string }[]
+        >`select location_text from event_private where event_id = ${eventId}`,
     );
     expect(adminRows[0]?.location_text).toBe(SECRET);
   });

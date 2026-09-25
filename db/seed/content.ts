@@ -38,7 +38,15 @@ export interface SeedResource {
   note?: string;
   prompt?: string;
   rights_status: 'baglanti' | 'ozgun_ozet';
+  /** open question for the editor; shown in the desk queue, never to members */
+  review_note?: string;
 }
+
+// 001's PDF is the early selection (a Murakami book, a Chekhov play, film
+// recommendations). The club later settled on a minimalist article/interview
+// version that is not in this repository, so those rows wait for the editor.
+const DMC_EARLY =
+  'erken PDF seçkisinden (kitap / film önerisi). sonraki makale–söyleşi ağırlıklı minimalist sürümle karşılaştırılmalı; o dosya henüz sisteme eklenmedi.';
 
 export interface SeedFilm {
   program_no: number;
@@ -50,6 +58,8 @@ export interface SeedFilm {
   status: 'oneri' | 'secildi' | 'yaklasiyor' | 'izlendi' | 'arsiv';
   curator_credit: string;
   reading_label: string;
+  /** the editorial file the rows were transcribed from (recorded as provenance) */
+  source_file: string;
   after_published: boolean;
   resources: SeedResource[];
   questions: { layer: 'once' | 'sonra'; body: string }[];
@@ -66,12 +76,14 @@ export const films: SeedFilm[] = [
     status: 'izlendi',
     curator_credit: 'çağla aytaç dursun',
     reading_label: 'ileri okuma & izleme',
+    source_file: '001_drive_my_car_short_reading.pdf',
     after_published: true,
     resources: [
       {
         layer: 'once',
         section: 'okuma',
         kind: 'book',
+        review_note: DMC_EARLY,
         title_original: 'Men Without Women',
         author: 'Haruki Murakami',
         form_label: 'öykü derlemesi',
@@ -85,6 +97,7 @@ export const films: SeedFilm[] = [
         layer: 'once',
         section: 'okuma',
         kind: 'book',
+        review_note: DMC_EARLY,
         heading: 'Vanya Dayı',
         author: 'Anton Çehov',
         form_label: 'tiyatro',
@@ -112,6 +125,7 @@ export const films: SeedFilm[] = [
         layer: 'once',
         section: 'izleme',
         kind: 'film',
+        review_note: DMC_EARLY,
         title_original: 'Wheel of Fortune and Fantasy',
         author: 'Ryūsuke Hamaguchi',
         published_year: 2021,
@@ -125,6 +139,7 @@ export const films: SeedFilm[] = [
         layer: 'once',
         section: 'izleme',
         kind: 'film',
+        review_note: DMC_EARLY,
         title_original: 'After Life',
         author: 'Hirokazu Kore-eda',
         published_year: 1998,
@@ -152,6 +167,7 @@ export const films: SeedFilm[] = [
     status: 'yaklasiyor',
     curator_credit: 'çağla aytaç dursun',
     reading_label: 'gösterim öncesi',
+    source_file: '002_canavar_pre_reading_mobile.pdf',
     after_published: false,
     resources: [
       {

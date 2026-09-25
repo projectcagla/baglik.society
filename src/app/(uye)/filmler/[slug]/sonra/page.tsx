@@ -106,7 +106,7 @@ export default async function AfterPage(props: PageProps<'/filmler/[slug]/sonra'
   const preview = viewer.isStaff && (await props.searchParams).gorunum === 'uye';
   const detail = await getFilm(viewer, slug, { asMemberPreview: preview });
   if (!detail) notFound();
-  const { film, after, questions, notes, afterVisible } = detail;
+  const { film, after, questions, notes, afterVisible, events } = detail;
   const canSee = afterVisible || (viewer.isStaff && !preview);
   const path = `/filmler/${film.slug}/sonra`;
 
@@ -116,7 +116,9 @@ export default async function AfterPage(props: PageProps<'/filmler/[slug]/sonra'
         <FilmHeader
           film={film}
           layer="sonra"
+          kicker="gösterim sonrası"
           afterVisible={afterVisible}
+          events={events}
           staff={viewer.isStaff}
           preview={preview}
         />
@@ -136,7 +138,9 @@ export default async function AfterPage(props: PageProps<'/filmler/[slug]/sonra'
       <FilmHeader
         film={film}
         layer="sonra"
+        kicker="gösterim sonrası"
         afterVisible={afterVisible}
+        events={events}
         staff={viewer.isStaff}
         preview={preview}
       />

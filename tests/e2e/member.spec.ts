@@ -61,7 +61,7 @@ test.describe('member', () => {
     await page.goto('/geceler/2');
     await page.getByText('gelemiyorum', { exact: true }).click();
     await page.getByRole('button', { name: 'kaydet' }).click();
-    await expect(page.getByText('katılımın kaydedildi.')).toBeVisible();
+    await expect(page.getByText('kaydedildi: gelemiyorum.')).toBeVisible();
     const ics = await page.request.get('/geceler/2/takvim');
     expect(await ics.text()).toContain('DTSTART:20260927T163000Z');
     for (const f of ['hikaye', 'gonderi', 'kart']) {

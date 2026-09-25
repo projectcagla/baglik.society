@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { FilmHeader } from '@/components/member/FilmHeader';
+import { ReadingPlace } from '@/components/member/ReadingPlace';
 import { ResourceEntry, anchorOf } from '@/components/member/ResourceEntry';
 import styles from '@/components/member/Reading.module.css';
 import ed from '@/components/member/Editorial.module.css';
@@ -25,21 +26,26 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
   const preview = viewer.isStaff && (await props.searchParams).gorunum === 'uye';
   const detail = await getFilm(viewer, slug, { asMemberPreview: preview });
   if (!detail) notFound();
-  const { film, before, afterVisible } = detail;
+  const { film, before, afterVisible, events } = detail;
   const marks = await getMarks(viewer, film.id);
   const path = `/filmler/${film.slug}/okuma`;
   const main = before.filter((r) => r.section !== 'eslik');
   const companions = before.filter((r) => r.section === 'eslik');
   const total = before.length;
-  const minutes = readingMinutes(before.map((r) => r.note ?? '').join(' '));
+  // measured on what this page actually asks you to read: the curator's text
+  const minutes = readingMinutes(
+    before.map((r) => [r.rationale, r.note, r.prompt].filter(Boolean).join(' ')).join(' '),
+  );
   const hasSummaries = before.some((r) => r.rights_status === 'ozgun_ozet');
 
   return (
     <div className={ed.page}>
       <FilmHeader
         film={film}
-        layer="okuma"
+        layer="once"
+        kicker={brandLower(film.reading_label) || 'gösterim öncesi'}
         afterVisible={afterVisible}
+        events={events}
         staff={viewer.isStaff}
         preview={preview}
       />
@@ -49,14 +55,21 @@ export default async function ReadingRoom(props: PageProps<'/filmler/[slug]/okum
           <p className={ed.empty}>seçki henüz hazırlanıyor.</p>
         ) : (
           <>
-            <nav className={`${styles.contents} no-print`} aria-label="bu dosyada">
-              <p className="meta">
-                {brandLower(film.reading_label) || 'okuma'} · {total} kaynak · yaklaşık {minutes} dk
+            <div className={styles.intro}>
+              <p className={styles.introMeta}>
+                {total} kaynak · bu sayfadaki notlar yaklaşık {minutes} dk
+                {film.curator_credit && <> · seçki: {film.curator_credit}</>}
               </p>
+              <ReadingPlace storageKey={film.slug} />
+            </div>
+            <nav className={`${styles.contents} no-print`} aria-label="bu dosyada">
               <ol>
                 {before.map((r, i) => (
                   <li key={r.id}>
-                    <a href={`#${anchorOf(r)}`}>
+                    <a
+                      href={`#${anchorOf(r)}`}
+                      data-read={marks.get(r.id)?.read_at ? '' : undefined}
+                    >
                       <span>{String(i + 1).padStart(2, '0')}</span>
                       <span>{r.heading ?? r.title_original}</span>
                     </a>

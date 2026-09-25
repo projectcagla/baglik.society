@@ -12,7 +12,8 @@ import {
 } from '@/server/auth/session';
 import { requireMember } from '@/server/auth/viewer';
 import { setRsvp } from '@/server/dal/events';
-import { setMark } from '@/server/dal/films';
+import { reportLink, setMark } from '@/server/dal/films';
+import { safeReturnPath } from '@/lib/return-path';
 import {
   addContribution,
   createEntry,
@@ -74,7 +75,13 @@ export async function rsvpAction(_prev: ActionState, form: FormData): Promise<Ac
   }
   revalidatePath('/oda');
   revalidatePath('/geceler', 'layout');
-  return { ok: true, message: 'katılımın kaydedildi.' };
+  // repeating the same answer is harmless: the database stores one row per invitee
+  const label = {
+    geliyorum: 'geliyorum',
+    gelemiyorum: 'gelemiyorum',
+    belirsiz: 'henüz belli değil',
+  };
+  return { ok: true, message: `kaydedildi: ${label[parsed.data.rsvp]}.` };
 }
 
 // ─── reading marks ─────────────────────────────────────────────────────────
@@ -90,7 +97,22 @@ export async function markAction(form: FormData): Promise<void> {
     .safeParse(Object.fromEntries(form));
   if (!parsed.success) return;
   await setMark(v, parsed.data.resourceId, parsed.data.field, parsed.data.on === '1');
-  revalidatePath(parsed.data.path);
+  // only known member sections are revalidated; anything else is ignored
+  const path = safeReturnPath(parsed.data.path);
+  if (path) revalidatePath(path);
+}
+
+/** A member flags a source link that does not open; the desk sees it. */
+export async function reportLinkAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const v = await requireMember();
+  const id = uuid.safeParse(form.get('resourceId'));
+  if (!id.success) return { ok: false, message: null };
+  try {
+    await reportLink(v, id.data);
+  } catch {
+    return { ok: false, message: 'bildirilemedi.' };
+  }
+  return { ok: true, message: 'bildirildi.' };
 }
 
 // ─── journal ───────────────────────────────────────────────────────────────
@@ -161,16 +183,17 @@ export async function contributionAction(_prev: ActionState, form: FormData): Pr
   } catch {
     return { ok: false, message: 'bu bölüm şu an katkıya açık değil.' };
   }
-  revalidatePath(parsed.data.path);
+  const back = safeReturnPath(parsed.data.path);
+  if (back) revalidatePath(back);
   return { ok: true, message: 'eklendi.' };
 }
 
 export async function withdrawContributionAction(form: FormData): Promise<void> {
   const v = await requireMember();
   const id = uuid.parse(form.get('id'));
-  const path = z.string().startsWith('/').parse(form.get('path'));
+  const path = safeReturnPath(String(form.get('path') ?? ''));
   await withdrawContribution(v, id);
-  revalidatePath(path);
+  if (path) revalidatePath(path);
 }
 
 // ─── profile & keys ────────────────────────────────────────────────────────

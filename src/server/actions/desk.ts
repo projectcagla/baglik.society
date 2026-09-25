@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { safeReturnPath } from '@/lib/return-path';
 import { istanbulLocalToDate } from '@/lib/dates';
 import { filmSlug } from '@/lib/text';
 import { endAllSessionsFor, issueInvite, restoreMember, revokeMember } from '@/server/auth/door';
@@ -200,8 +201,12 @@ const resourceSchema = z
     link_hint: opt(160),
     access_note: opt(300),
     spoiler_level: z.enum(['yok', 'hafif', 'var', 'belirtilmedi']),
+    rationale: opt(600),
     note: opt(6000),
     prompt: opt(300),
+    source_minutes: optInt(1, 600),
+    provenance: opt(200),
+    review_note: opt(500),
     quote: opt(600),
     quote_credit: opt(200),
     rights_status: z.enum(['baglanti', 'ozgun_ozet', 'lisansli_ceviri', 'kendi_icerigi']),
@@ -656,8 +661,8 @@ export async function verifyMfaAction(_prev: MfaState, form: FormData): Promise<
   const result = await verifyMfa(v.id, v.sessionId, code);
   if (result === 'throttled') return { message: 'çok fazla deneme. 15 dakika sonra yeniden dene.' };
   if (result === 'invalid') return { message: 'kod doğrulanamadı.' };
-  const back = String(form.get('r') ?? '');
-  redirect(back.startsWith('/masa') && !back.startsWith('//') ? back : '/masa');
+  const back = safeReturnPath(String(form.get('r') ?? ''));
+  redirect(back?.startsWith('/masa') ? back : '/masa');
 }
 
 // ─── moderation ────────────────────────────────────────────────────────────
@@ -665,8 +670,8 @@ export async function moderateAction(form: FormData): Promise<void> {
   const v = await requireAdmin();
   const id = uuid.parse(form.get('id'));
   const what = z.enum(['contribution', 'journal']).parse(form.get('what'));
-  const path = z.string().startsWith('/').max(200).parse(form.get('path'));
+  const path = safeReturnPath(String(form.get('path') ?? ''));
   if (what === 'contribution') await desk.moderateContribution(v, id, 'kaldirildi');
   else await desk.moderateJournal(v, id, 'gizlendi');
-  revalidatePath(path);
+  if (path) revalidatePath(path);
 }

@@ -58,6 +58,13 @@ export interface ResourceRow {
   link_status: 'denetlenmedi' | 'saglam' | 'yonlendirme' | 'kirik' | 'hata';
   link_checked_at: Date | null;
   link_http_status: number | null;
+  rationale: string | null;
+  source_minutes: number | null;
+  provenance: string | null;
+  approved_at: Date | null;
+  review_note: string | null;
+  link_reported_at: Date | null;
+  link_report_count: number;
   updated_at: Date;
 }
 
@@ -105,51 +112,65 @@ export interface FilmDetail {
   questions: QuestionRow[];
   notes: NoteRow[];
   afterVisible: boolean;
-  events: { number: number | null; starts_at: Date; status: string }[];
+  events: FilmEvent[];
+}
+
+export interface FilmEvent {
+  number: number | null;
+  starts_at: Date;
+  status: string;
+  title: string | null;
+  invited: boolean;
 }
 
 /**
- * Everything a member may see about one film. The after layer arrives only
- * if Postgres agrees it is published (resources/questions/notes policies);
- * `afterVisible` is informational, not the gate.
+ * Everything a member may see about one film. Postgres decides: drafts and
+ * the after layer arrive only if the resources/questions/notes policies allow
+ * it. With `asMemberPreview` a staff viewer queries *with member rights*
+ * (app.preview), so the preview cannot show anything a member would not get.
  */
 export async function getFilm(
   v: Viewer,
   slug: string,
   opts: { asMemberPreview?: boolean } = {},
 ): Promise<FilmDetail | null> {
-  return asMember(actorOf(v), async (tx) => {
+  return asMember(actorOf(v, { preview: opts.asMemberPreview }), async (tx) => {
     const [film] = await tx<FilmRow[]>`select * from films where slug = ${slug}`;
     if (!film) return null;
-    const published = (s: string) => !opts.asMemberPreview || s === 'yayinda';
-    const resources = (
-      await tx<ResourceRow[]>`
+    const resources = await tx<ResourceRow[]>`
       select * from resources where film_id = ${film.id}
-       order by layer, case section when 'okuma' then 0 when 'izleme' then 1 else 2 end, position, created_at`
-    ).filter((r) => published(r.status));
-    const questions = (
-      await tx<QuestionRow[]>`
-      select * from questions where film_id = ${film.id} order by layer, position, created_at`
-    ).filter((q) => published(q.status));
-    const notes = (
-      await tx<NoteRow[]>`
+       order by layer, case section when 'okuma' then 0 when 'izleme' then 1 else 2 end, position, created_at`;
+    const questions = await tx<QuestionRow[]>`
+      select * from questions where film_id = ${film.id} order by layer, position, created_at`;
+    const notes = await tx<NoteRow[]>`
       select id, title, body, author_credit, status, published_at from screening_notes
-       where film_id = ${film.id} order by coalesce(published_at, created_at)`
-    ).filter((n) => published(n.status));
-    const events = await tx<{ number: number | null; starts_at: Date; status: string }[]>`
-      select e.number, e.starts_at, e.status from events e
+       where film_id = ${film.id} order by coalesce(published_at, created_at)`;
+    const events = await tx<FilmEvent[]>`
+      select e.number, e.starts_at, e.status, e.title,
+             exists (select 1 from event_invitees i where i.event_id = e.id
+                      and i.member_id = ${v.id} and i.status = 'davetli') as invited
+        from events e
         join event_films ef on ef.event_id = e.id
        where ef.film_id = ${film.id} and e.status <> 'taslak'
        order by e.starts_at`;
     const afterVisible =
       !!film.after_published_at && film.after_published_at.getTime() <= Date.now();
-    const showAfter = afterVisible || (v.isStaff && !opts.asMemberPreview);
+    // desk-only working notes never leave the server for a member view
+    const desk = v.isStaff && !opts.asMemberPreview;
+    const rows = desk
+      ? resources
+      : resources.map((r) => ({
+          ...r,
+          review_note: null,
+          link_report_count: 0,
+          link_reported_at: null,
+        }));
     return {
       film,
-      before: resources.filter((r) => r.layer === 'once'),
-      after: showAfter ? resources.filter((r) => r.layer === 'sonra') : [],
-      questions: questions.filter((q) => q.layer === 'once' || showAfter),
-      notes: showAfter ? notes : [],
+      before: rows.filter((r) => r.layer === 'once'),
+      after: rows.filter((r) => r.layer === 'sonra'),
+      questions,
+      notes,
       afterVisible,
       events,
     };
@@ -193,6 +214,10 @@ export async function setMark(
   });
 }
 
+export async function reportLink(v: Viewer, resourceId: string): Promise<void> {
+  await asMember(actorOf(v), (tx) => tx`select app.report_link(${resourceId})`);
+}
+
 export interface SavedItem {
   resource_id: string;
   heading: string | null;
@@ -218,20 +243,4 @@ export async function listSaved(v: Viewer): Promise<SavedItem[]> {
        where m.member_id = ${v.id} and (m.saved_at is not null)
        order by m.saved_at desc`,
   );
-}
-
-/** Most recently published source across visible films, for the room. */
-export async function latestPublishedResource(v: Viewer) {
-  const [row] = await asMember(
-    actorOf(v),
-    (tx) => tx<
-      (ResourceRow & { film_slug: string; film_title: string; program_no: number | null })[]
-    >`
-      select r.*, f.slug as film_slug, f.title as film_title, f.program_no
-        from resources r join films f on f.id = r.film_id
-       where r.status = 'yayinda'
-       order by r.published_at desc nulls last, f.program_no desc nulls last, r.position
-       limit 1`,
-  );
-  return row ?? null;
 }

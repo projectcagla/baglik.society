@@ -83,12 +83,13 @@
 
 .layers {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
   border-bottom: 1px solid var(--line);
 }
 
-.layers a,
-.layers span {
+.layers > a,
+.layers > span {
   display: inline-block;
   padding: 0.75rem 0;
   font-size: 0.9375rem;
@@ -204,4 +205,34 @@
     gap: 4rem;
     align-items: start;
   }
+}
+
+/* compact header for the reading and after documents: the first phone
+   screen belongs to the text, not to the masthead */
+.headCompact {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 40rem;
+}
+
+.filmTitleCompact {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-4);
+  line-height: 1;
+}
+
+.lockNote {
+  color: var(--ink-3);
+}
+
+.staffLine {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.staffLine a {
+  text-decoration-color: var(--line-strong);
 }

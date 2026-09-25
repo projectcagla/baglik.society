@@ -28,7 +28,7 @@ test.describe.serial('location leak regression', () => {
     await page.goto('/geceler/2');
     await page.getByText('geliyorum', { exact: true }).click();
     await page.getByRole('button', { name: 'kaydet' }).click();
-    await expect(page.getByText('katılımın kaydedildi.')).toBeVisible();
+    await expect(page.getByText('kaydedildi: geliyorum.')).toBeVisible();
 
     for (const path of [
       '/oda',

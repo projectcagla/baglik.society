@@ -36,8 +36,9 @@ export default async function FilmPage(props: PageProps<'/filmler/[slug]'>) {
     <div className={ed.page}>
       <FilmHeader
         film={film}
-        layer="once"
+        layer="dosya"
         afterVisible={afterVisible}
+        events={events}
         staff={viewer.isStaff}
         preview={preview}
       />

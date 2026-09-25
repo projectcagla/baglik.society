@@ -141,6 +141,9 @@ export type ResourceInput = Omit<
   | 'link_checked_at'
   | 'link_http_status'
   | 'updated_at'
+  | 'approved_at'
+  | 'link_reported_at'
+  | 'link_report_count'
 >;
 
 export async function deskResource(v: Viewer, id: string) {

@@ -140,11 +140,18 @@ describe('members, films and the two layers', () => {
       }),
     ).rejects.toThrow();
 
-    await asSystem((tx) => tx`update films set after_published_at = now() where id = ${filmId}`);
+    // opening it needs a screened film (0003 guard); simulate the night having happened
+    await asSystem(
+      (tx) =>
+        tx`update films set status = 'izlendi', after_published_at = now() where id = ${filmId}`,
+    );
     const after = await getFilm(member, '002-canavar');
     expect(after!.after.map((r) => r.heading)).toContain('SPOILER-BASLIK');
     expect(after!.notes.map((n) => n.body)).toContain('NOT-METIN');
-    await asSystem((tx) => tx`update films set after_published_at = null where id = ${filmId}`);
+    await asSystem(
+      (tx) =>
+        tx`update films set status = 'yaklasiyor', after_published_at = null where id = ${filmId}`,
+    );
   });
 });
 

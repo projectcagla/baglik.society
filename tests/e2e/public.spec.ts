@@ -112,7 +112,7 @@ test.describe('public surface', () => {
     await page.goto('/geceler/2');
     await page.getByLabel('henüz belli değil').check();
     await page.getByRole('button', { name: 'kaydet' }).click();
-    await expect(page.getByText('katılımın kaydedildi.')).toBeVisible();
+    await expect(page.getByText('kaydedildi: henüz belli değil.')).toBeVisible();
     await db((sql) => sql`update event_invitees set rsvp = null`);
     await ctx.close();
   });

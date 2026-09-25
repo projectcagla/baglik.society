@@ -9,6 +9,11 @@ export interface DbActor {
   memberId: string;
   /** true only when this session passed a second factor recently (owner/admin) */
   mfa: boolean;
+  /**
+   * Staff "üye gibi gör": the database answers every role check as for a plain
+   * member (app.role() in 0003_editorial.sql), so the preview is the real thing.
+   */
+  preview?: boolean;
 }
 
 /**
@@ -21,7 +26,8 @@ export async function asMember<T>(actor: DbActor, fn: (tx: Tx) => Promise<T>): P
     await tx.unsafe('set local role baglik_app');
     await tx`
       select set_config('app.member_id', ${actor.memberId}, true),
-             set_config('app.mfa', ${actor.mfa ? 'on' : 'off'}, true)`;
+             set_config('app.mfa', ${actor.mfa && !actor.preview ? 'on' : 'off'}, true),
+             set_config('app.preview', ${actor.preview ? 'member' : ''}, true)`;
     return fn(tx);
   });
   return result as T;

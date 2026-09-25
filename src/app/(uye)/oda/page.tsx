@@ -6,16 +6,16 @@ import { programLabel } from '@/lib/text';
 import { requireMember } from '@/server/auth/viewer';
 import { hasPersonalKey } from '@/server/auth/door';
 import { nextEvent } from '@/server/dal/events';
-import { latestPublishedResource, listFilms } from '@/server/dal/films';
+import { listFilms } from '@/server/dal/films';
 
 export const metadata: Metadata = { title: 'oda' };
 
 export default async function RoomPage() {
   const viewer = await requireMember();
-  const [next, films, latest, keyExists] = await Promise.all([
+  // one focus: the next night you are invited to. no news boxes (v1.1)
+  const [next, films, keyExists] = await Promise.all([
     nextEvent(viewer),
     listFilms(viewer),
-    latestPublishedResource(viewer),
     hasPersonalKey(viewer.id),
   ]);
   const nextFilmId = next?.films[0]?.id;
@@ -43,18 +43,6 @@ export default async function RoomPage() {
             henüz kişisel anahtarın yok. başka bir cihazdan girebilmek için{' '}
             <Link href="/hosgeldin">anahtarını oluştur</Link>.
           </p>
-        )}
-        {latest && (
-          <div className={styles.latest}>
-            <span className="meta">son eklenen</span>
-            <Link href={`/filmler/${latest.film_slug}/okuma#k-${latest.id.slice(0, 8)}`}>
-              {latest.heading ?? latest.title_original}
-            </Link>
-            <span className="meta">
-              {[latest.publication, latest.author].filter(Boolean).join(' · ')} —{' '}
-              {programLabel(latest.program_no, latest.film_title)}
-            </span>
-          </div>
         )}
         {archive.length > 0 && (
           <p className={styles.archive}>

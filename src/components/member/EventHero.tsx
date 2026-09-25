@@ -15,6 +15,8 @@ const RSVP_TEXT: Record<string, string> = {
 /**
  * The invitation rhythm (sparse serif, short rules, lowercase) used by the
  * room and the event page. Location is whatever the database released.
+ * On the event page it opens with the approved portal, like the printed
+ * invitation; the room keeps it off so the night is the only focus.
  */
 export function EventHero({ view, variant }: { view: EventView; variant: 'room' | 'event' }) {
   const { event, films, invite, location } = view;
@@ -24,17 +26,23 @@ export function EventHero({ view, variant }: { view: EventView; variant: 'room' 
     : event.number
       ? `${event.number}. film gecesi`
       : 'film gecesi';
-  const Heading = variant === 'room' ? 'h1' : 'h1';
+  const invited = invite?.status === 'davetli';
 
   return (
     <section className={styles.next} aria-labelledby="gece-baslik">
+      {variant === 'event' && (
+        <div className={styles.portal} aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size brand raster */}
+          <img src="/brand/portal.webp" alt="" width={396} height={396} decoding="async" />
+        </div>
+      )}
       <p className={styles.kicker}>
         {variant === 'room' ? `sıradaki gece · ${nightLabel}` : nightLabel}
       </p>
       {film && <p className={styles.no}>{programNo(film.program_no)}</p>}
-      <Heading id="gece-baslik" className={styles.title}>
+      <h1 id="gece-baslik" className={styles.title}>
         {film ? brandLower(film.title) : nightLabel}
-      </Heading>
+      </h1>
       {film?.director && <p className={styles.director}>{brandLower(film.director)}</p>}
       {films.length > 1 && (
         <p className={styles.director}>
@@ -81,6 +89,25 @@ export function EventHero({ view, variant }: { view: EventView; variant: 'room' 
             )}
           </div>
           {invite?.rsvp && <p className={styles.rsvpState}>katılımın: {RSVP_TEXT[invite.rsvp]}</p>}
+        </>
+      )}
+
+      {variant === 'event' && (
+        <>
+          <p className={styles.rsvpState}>
+            {!invited
+              ? 'bu geceye davetli değilsin.'
+              : invite?.rsvp
+                ? `davetlisin · katılımın: ${RSVP_TEXT[invite.rsvp]}`
+                : 'davetlisin · katılımını henüz bildirmedin'}
+          </p>
+          {film && (
+            <p className={styles.readLink}>
+              <Link href={`/filmler/${film.slug}/okuma`}>
+                ön okumaya geç <span aria-hidden="true">→</span>
+              </Link>
+            </p>
+          )}
         </>
       )}
     </section>

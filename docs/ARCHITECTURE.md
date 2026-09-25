@@ -109,6 +109,7 @@ Sayfa, takvim dosyası (`.ics`) ve bildirim e-postası aynı fonksiyonu kullanı
 | harici video izleme | gömülü video yok, yalnız dış bağlantı (`noopener noreferrer`) | |
 | referrer sızıntısı | `Referrer-Policy: same-origin`, dış bağlantılarda `noreferrer` | |
 | e-posta sırrı sızıntısı | konum e-postaya yalnız yönetici açıkça işaretlerse girer; kurtarma e-postasında film/gece bilgisi yok | |
+| SSRF (editörün girdiği kaynak URL'si sunucudan çağrılıyor) | yalnız http(s) ve 80/443, kimlik bilgili URL yok, her yönlendirme adımı elle izleniyor ve DNS sonucu özel/loopback/link-local/CGNAT aralıklarına karşı denetleniyor | `ssrf.test.ts` |
 | webhook / cron | `CRON_SECRET` zamanlama güvenli karşılaştırma, yanlışsa 404 | `public.spec.ts` |
 | clickjacking | `frame-ancestors 'none'`, `X-Frame-Options: DENY` | |
 | yönetici hesabı ele geçirme | TOTP, 12 saatlik tazelik, DB tarafında MFA şartı, kurucu dışında kimse yönetici atayamaz | `rls.test.ts`, `admin.spec.ts` |

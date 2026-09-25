@@ -1,4 +1,6 @@
 import 'server-only';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { asSystem } from '@/server/db/system';
 
 // Source link health. Never deletes or rewrites a link — it only records what
@@ -35,12 +37,67 @@ export function classify(
   return 'hata';
 }
 
-export async function probe(url: string, fetchImpl: typeof fetch = fetch): Promise<LinkResult> {
+/** Private, loopback, link-local, CGNAT, benchmark, multicast and reserved ranges. */
+export function isPrivateAddress(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) {
+    const [a, b] = ip.split('.').map(Number) as [number, number];
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      a >= 224 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19))
+    );
+  }
+  if (v === 6) {
+    const x = ip.toLowerCase();
+    if (x === '::' || x === '::1') return true;
+    if (x.startsWith('::ffff:')) return isPrivateAddress(x.slice(7));
+    return /^(fc|fd|fe[89ab]|ff)/.test(x);
+  }
+  return true;
+}
+
+type Resolver = (host: string, opts: { all: true }) => Promise<{ address: string }[]>;
+const systemResolve: Resolver = (host, opts) => lookup(host, opts);
+
+/**
+ * Editors type these URLs, so the server must not be steered into its own
+ * network (SSRF): http(s) only, default ports, no credentials, and every hop
+ * resolved and checked against private ranges.
+ */
+export async function assertPublicUrl(
+  raw: string,
+  resolve: Resolver = systemResolve,
+): Promise<URL> {
+  const u = new URL(raw);
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new Error('protocol');
+  if (u.username || u.password) throw new Error('credentials');
+  if (u.port && u.port !== '80' && u.port !== '443') throw new Error('port');
+  const host = u.hostname.replace(/^\[|\]$/g, '');
+  const addrs = isIP(host) ? [{ address: host }] : await resolve(host, { all: true });
+  if (!addrs.length || addrs.some((a) => isPrivateAddress(a.address))) {
+    throw new Error('private address');
+  }
+  return u;
+}
+
+export async function probe(
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+  resolve: Resolver = systemResolve,
+): Promise<LinkResult> {
   const started = Date.now();
-  const attempt = async (method: 'HEAD' | 'GET') =>
-    fetchImpl(url, {
+  const hop = async (target: string, method: 'HEAD' | 'GET') => {
+    await assertPublicUrl(target, resolve);
+    return fetchImpl(target, {
       method,
-      redirect: 'follow',
+      redirect: 'manual',
       headers: {
         'User-Agent': UA,
         Accept: 'text/html,*/*;q=0.5',
@@ -48,27 +105,49 @@ export async function probe(url: string, fetchImpl: typeof fetch = fetch): Promi
       },
       signal: AbortSignal.timeout(8000),
     });
+  };
+  // redirects are followed by hand (max 5) so each hop passes the guard
+  const follow = async (method: 'HEAD' | 'GET') => {
+    let current = url;
+    for (let i = 0; i <= 5; i++) {
+      const res = await hop(current, method);
+      const loc = res.headers.get('location');
+      if (res.status >= 300 && res.status < 400 && loc) {
+        await res.body?.cancel().catch(() => {});
+        current = new URL(loc, current).toString();
+        continue;
+      }
+      return { res, finalUrl: current };
+    }
+    throw new Error('too many redirects');
+  };
   try {
-    let res = await attempt('HEAD');
-    if ([403, 405, 501].includes(res.status)) res = await attempt('GET');
+    let { res, finalUrl } = await follow('HEAD');
+    if ([403, 405, 501].includes(res.status)) ({ res, finalUrl } = await follow('GET'));
     await res.body?.cancel().catch(() => {});
-    const status = classify(res.status, url, res.url || null, null);
+    const status = classify(res.status, url, finalUrl, null);
     return {
       ok: status === 'saglam' || status === 'yonlendirme',
       status,
       httpStatus: res.status,
-      finalUrl: res.url || null,
+      finalUrl,
       error: null,
       durationMs: Date.now() - started,
     };
   } catch (err) {
-    const name = err instanceof Error ? err.name : 'error';
+    const e = err instanceof Error ? err : new Error('error');
+    const error =
+      e.name === 'TimeoutError'
+        ? 'zaman aşımı'
+        : e.message === 'private address'
+          ? 'iç ağ adresi reddedildi'
+          : e.message || e.name;
     return {
       ok: false,
       status: 'hata',
       httpStatus: null,
       finalUrl: null,
-      error: name === 'TimeoutError' ? 'zaman aşımı' : name,
+      error,
       durationMs: Date.now() - started,
     };
   }

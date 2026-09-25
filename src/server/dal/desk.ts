@@ -3,6 +3,7 @@ import { asMember, type Tx } from '@/server/db/context';
 import { actorOf, type Viewer } from '@/server/auth/viewer';
 import type { FilmRow, NoteRow, QuestionRow, ResourceRow } from './films';
 import type { EventRow } from './events';
+import { readyToPublish } from '@/lib/publish-check';
 
 // Editor desk data. Everything runs as `baglik_app` under RLS: an editor
 // who reaches an admin function still gets nothing from Postgres.
@@ -183,22 +184,54 @@ export async function createResource(
   });
 }
 
+/** Fields a human confirmed when approving; changing any of them withdraws the approval. */
+const BIBLIOGRAPHY = ['url', 'title_original', 'author', 'publication', 'published_year'] as const;
+
 export async function updateResource(v: Viewer, id: string, input: ResourceInput): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
-    const [before] = await tx<{ url: string | null }[]>`select url from resources where id = ${id}`;
+    const [before] = await tx<
+      Pick<ResourceRow, (typeof BIBLIOGRAPHY)[number]>[]
+    >`select url, title_original, author, publication, published_year from resources where id = ${id}`;
     if (!before) throw new Error('not found');
     const urlChanged = before.url !== input.url;
+    const bibChanged = BIBLIOGRAPHY.some((k) => (before[k] ?? null) !== (input[k] ?? null));
     await tx`update resources set ${tx({ ...input, updated_by: v.id } as never)} where id = ${id}`;
     if (urlChanged) {
       await tx`update resources set link_status = 'denetlenmedi', link_checked_at = null, link_http_status = null,
                  link_final_url = null, link_error = null where id = ${id}`;
     }
-    await audit(tx, 'resource.update', 'resource', id, urlChanged ? { url_changed: true } : {});
+    if (bibChanged) {
+      await tx`update resources set approved_at = null, approved_by = null where id = ${id}`;
+    }
+    await audit(tx, 'resource.update', 'resource', id, {
+      ...(urlChanged ? { url_changed: true } : {}),
+      ...(bibChanged ? { approval_withdrawn: true } : {}),
+    });
+  });
+}
+
+/**
+ * "I checked the bibliography and the link by hand." Records who and when,
+ * and clears member link reports the editor has now looked at.
+ */
+export async function approveResource(v: Viewer, id: string): Promise<void> {
+  await asMember(actorOf(v), async (tx) => {
+    const rows = await tx`
+      update resources set approved_at = now(), approved_by = ${v.id},
+             link_report_count = 0, link_reported_at = null
+       where id = ${id} returning id`;
+    if (!rows.length) throw new Error('not found');
+    await audit(tx, 'resource.approve', 'resource', id);
   });
 }
 
 export async function setResourceStatus(v: Viewer, id: string, publish: boolean): Promise<void> {
   await asMember(actorOf(v), async (tx) => {
+    if (publish) {
+      const [r] = await tx<ResourceRow[]>`select * from resources where id = ${id}`;
+      if (!r) throw new Error('not found');
+      if (!readyToPublish(r)) throw new Error('publish checklist');
+    }
     await tx`update resources set status = ${publish ? 'yayinda' : 'taslak'},
                published_at = ${publish ? tx`coalesce(published_at, now())` : null}, updated_by = ${v.id}
              where id = ${id}`;
@@ -634,6 +667,37 @@ export async function linkHealth(v: Viewer) {
        where r.url is not null
        order by case r.link_status when 'kirik' then 0 when 'hata' then 1 when 'yonlendirme' then 2
                 when 'denetlenmedi' then 3 else 4 end, f.program_no, r.position`,
+  );
+}
+
+export interface QueueItem {
+  id: string;
+  heading: string | null;
+  title_original: string | null;
+  status: 'taslak' | 'yayinda';
+  review_note: string | null;
+  link_report_count: number;
+  link_status: string;
+  approved_at: Date | null;
+  film_title: string;
+  program_no: number | null;
+}
+
+/** What waits for a human: open questions, member reports, dead links, unapproved sources. */
+export async function deskQueue(v: Viewer): Promise<QueueItem[]> {
+  // RLS would hand a member the published rows; the queue's notes are the desk's own
+  if (!v.isStaff) return [];
+  return asMember(
+    actorOf(v),
+    (tx) => tx<QueueItem[]>`
+      select r.id, r.heading, r.title_original, r.status, r.review_note, r.link_report_count,
+             r.link_status, r.approved_at, f.title as film_title, f.program_no
+        from resources r join films f on f.id = r.film_id
+       where r.review_note is not null or r.link_report_count > 0
+          or r.link_status in ('kirik', 'hata') or r.approved_at is null
+       order by (r.link_report_count > 0) desc, (r.review_note is not null) desc,
+                (r.link_status in ('kirik', 'hata')) desc, f.program_no desc nulls last, r.layer, r.position
+       limit 60`,
   );
 }
 

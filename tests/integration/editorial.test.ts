@@ -3,7 +3,16 @@ import { asAnonymous, asMember } from '@/server/db/context';
 import { asSystem } from '@/server/db/system';
 import { closeDb } from '@/server/db/client';
 import { getFilm, reportLink } from '@/server/dal/films';
-import { moderateContribution, moderateJournal } from '@/server/dal/desk';
+import {
+  approveResource,
+  createResource,
+  deskQueue,
+  moderateContribution,
+  moderateJournal,
+  setResourceStatus,
+  updateResource,
+  type ResourceInput,
+} from '@/server/dal/desk';
 import {
   addContribution,
   createEntry,
@@ -284,5 +293,77 @@ describe('after-layer moderation and withdrawals', () => {
     await moderateJournal(admin, shared.id, 'gorunur');
     expect(JSON.stringify(await listHiddenShared(admin))).not.toContain('PAYLASILAN-NOT');
     await asSystem((tx) => tx`delete from journal_entries where member_id = ${author.id}`);
+  });
+});
+
+describe('desk: checklist, approval, queue', () => {
+  const input = (patch: Partial<ResourceInput> = {}) =>
+    ({
+      layer: 'once',
+      section: 'okuma',
+      position: 0,
+      kind: 'article',
+      heading: 'masa testi',
+      title_original: 'Desk Test',
+      url: 'https://example.org/desk',
+      spoiler_level: 'belirtilmedi',
+      rights_status: 'baglanti',
+      ...patch,
+    }) as ResourceInput;
+
+  it('the server refuses a publish the checklist would refuse', async () => {
+    const id = await createResource(editor, canavar, input());
+    created.push(id);
+    await expect(setResourceStatus(editor, id, true)).rejects.toThrow(/publish checklist/);
+    await updateResource(editor, id, input({ spoiler_level: 'yok' }));
+    await setResourceStatus(editor, id, true);
+    const [row] = await asSystem(
+      (tx) => tx<{ status: string }[]>`select status from resources where id = ${id}`,
+    );
+    expect(row!.status).toBe('yayinda');
+  });
+
+  it('approval is by a person and falls away when the bibliography changes', async () => {
+    const id = await createResource(editor, canavar, input({ spoiler_level: 'yok' }));
+    created.push(id);
+    await reportLink(member, id).catch(() => {}); // draft: refused, nothing changes
+    expect((await deskQueue(editor)).map((q) => q.id)).toContain(id);
+    await approveResource(editor, id);
+    const approved = await asSystem(
+      (tx) =>
+        tx<
+          { approved_at: Date | null; approved_by: string | null }[]
+        >`select approved_at, approved_by from resources where id = ${id}`,
+    );
+    expect(approved[0]).toMatchObject({ approved_by: editor.id });
+    expect((await deskQueue(editor)).map((q) => q.id)).not.toContain(id);
+
+    // a spelling fix in the note keeps the approval; a new link does not
+    await updateResource(editor, id, input({ spoiler_level: 'yok', note: 'düzeltme' }));
+    expect(
+      (
+        await asSystem(
+          (tx) => tx<{ a: Date | null }[]>`select approved_at as a from resources where id = ${id}`,
+        )
+      )[0]!.a,
+    ).toBeInstanceOf(Date);
+    await updateResource(
+      editor,
+      id,
+      input({ spoiler_level: 'yok', note: 'düzeltme', url: 'https://example.org/yeni' }),
+    );
+    expect(
+      (
+        await asSystem(
+          (tx) => tx<{ a: Date | null }[]>`select approved_at as a from resources where id = ${id}`,
+        )
+      )[0]!.a,
+    ).toBeNull();
+  });
+
+  it('members cannot approve or read the queue', async () => {
+    const id = await resource(canavar, { layer: 'once', status: 'yayinda' });
+    await expect(approveResource(member, id)).rejects.toThrow(/not found/);
+    expect(await deskQueue(member)).toEqual([]);
   });
 });

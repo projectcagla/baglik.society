@@ -119,6 +119,45 @@ test.describe.serial('desk', () => {
     await ownerCtx.close();
   });
 
+  test('a new source: short form, checklist before publishing, a human approval', async ({
+    page,
+  }) => {
+    await loginAs(page, 'editor');
+    const [f] = await db(
+      (sql) => sql<{ id: string }[]>`select id from films where slug = '002-canavar'`,
+    );
+    await page.goto(`/masa/kaynaklar/yeni?film=${f!.id}&layer=once`);
+    // optional fields wait behind one disclosure
+    await expect(page.getByLabel('erişim uyarısı')).toBeHidden();
+    await page.getByLabel('türkçe başlık').fill('denetim listesi');
+    await page.getByLabel('özgün bağlantı').fill('https://example.org/denetim');
+    await page.getByLabel('spoiler').selectOption('belirtilmedi');
+    await page.getByLabel('hak durumu').selectOption('baglanti');
+    await page.getByRole('button', { name: 'kaynağı oluştur (taslak)' }).click();
+    await expect(page.getByText('kaynak taslak olarak oluşturuldu')).toBeVisible();
+
+    const list = page.getByRole('region', { name: 'yayın öncesi denetim' });
+    await expect(list).toContainText('spoiler düzeyi açıkça seçildi');
+    await expect(list).toContainText('(eksik)');
+    await page.getByRole('button', { name: 'yayımla' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'yayın öncesi denetimde eksik' }),
+    ).toBeVisible();
+
+    await page.getByLabel('spoiler').selectOption('yok');
+    await page.getByRole('button', { name: 'kaydet', exact: true }).click();
+    await expect(page.getByText('kaydedildi.')).toBeVisible();
+    await page.goto(page.url().replace(/\?.*$/, ''));
+    await expect(list).not.toContainText('(eksik)');
+    await page.getByRole('button', { name: 'yayımla' }).click();
+    await expect(page.getByRole('button', { name: 'taslağa al' })).toBeVisible();
+
+    await expect(list).toContainText('onay bekliyor');
+    await page.getByRole('button', { name: 'künyeyi ve bağlantıyı kontrol ettim' }).click();
+    await expect(list).not.toContainText('onay bekliyor');
+    await db((sql) => sql`delete from resources where heading = 'denetim listesi'`);
+  });
+
   test('the after layer of a coming film cannot be opened; the desk says why', async ({ page }) => {
     await loginAs(page, 'editor');
     const [f] = await db(

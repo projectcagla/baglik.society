@@ -65,6 +65,7 @@ async function deskErrorCode(write: () => Promise<unknown>): Promise<DeskErrorCo
     const m = err instanceof Error ? err.message : '';
     if (m.includes('after layer requires a screening')) return 'sonra-erken';
     if (m.includes('resources_no_spoiler_before')) return 'spoiler-once';
+    if (m.includes('publish checklist')) return 'eksik';
     throw err;
   }
 }
@@ -269,6 +270,13 @@ export async function resourceStatusAction(form: FormData): Promise<void> {
   const code = await deskErrorCode(() => desk.setResourceStatus(v, id, form.get('on') === '1'));
   revalidatePath('/', 'layout');
   if (code) redirect(`/masa/kaynaklar/${id}?hata=${code}`);
+}
+
+export async function approveResourceAction(form: FormData): Promise<void> {
+  const v = await requireStaff();
+  const id = uuid.parse(form.get('id'));
+  await desk.approveResource(v, id);
+  revalidatePath('/masa', 'layout');
 }
 
 export async function moveResourceAction(form: FormData): Promise<void> {

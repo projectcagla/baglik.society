@@ -165,3 +165,25 @@ test.describe('the night (gece)', () => {
     await db((sql) => sql`update event_invitees set rsvp = null`);
   });
 });
+
+test.describe('the film dossier', () => {
+  test('önce · gece · sonra, and a private layer that is only yours', async ({ page }) => {
+    await loginAs(page, 'member');
+    await page.goto('/filmler/002-canavar');
+    await expect(page.getByRole('heading', { name: 'gösterim öncesi', level: 2 })).toBeVisible();
+    await expect(page.getByRole('link', { name: '2. film gecesi' })).toHaveAttribute(
+      'href',
+      '/geceler/2',
+    );
+    await expect(
+      page.getByText('sonrası, gece gerçekleştikten sonra editör tarafından açılır.'),
+    ).toBeVisible();
+    await expect(page.getByText('senin için · yalnızca sen görürsün')).toBeVisible();
+    await expect(page.getByText(/okuduğun: 0 \/ \d+ kaynak/)).toBeVisible();
+
+    await page.goto('/filmler/001-drive-my-car');
+    await expect(page.getByText('izlendi; gecenin tarihi kayda geçmedi.')).toBeVisible();
+    await page.getByRole('link', { name: /sonrasına geç/ }).click();
+    await expect(page).toHaveURL(/\/filmler\/001-drive-my-car\/sonra$/);
+  });
+});

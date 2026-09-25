@@ -21,7 +21,8 @@ function FilmRowItem({ f, staff }: { f: FilmListItem; staff: boolean }) {
           {f.year && <span>{f.year}</span>}
           {f.screened_on && <span>{formatDay(f.screened_on)}</span>}
           {f.themes[0] && <span>{brandLower(f.themes[0])}</span>}
-          {f.reading_count > 0 && <span>{f.reading_count} kaynak</span>}
+          {f.reading_count > 0 && <span>önce · {f.reading_count} kaynak</span>}
+          {f.after_visible && <span>sonrası açık</span>}
           {staff && <span>{FILM_STATUS_LABELS[f.status]}</span>}
           {draft && <span className={`${ed.badge} ${ed.badgeDraft}`}>taslak</span>}
         </span>

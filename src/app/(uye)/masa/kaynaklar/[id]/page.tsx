@@ -6,8 +6,14 @@ import styles from '@/components/desk/Desk.module.css';
 import ui from '@/components/ui/ui.module.css';
 import { formatShort } from '@/lib/dates';
 import { deskError } from '@/lib/desk-errors';
+import { publishChecklist } from '@/lib/publish-check';
 import { programLabel } from '@/lib/text';
-import { checkLinkAction, deleteResourceAction, resourceStatusAction } from '@/server/actions/desk';
+import {
+  approveResourceAction,
+  checkLinkAction,
+  deleteResourceAction,
+  resourceStatusAction,
+} from '@/server/actions/desk';
 import { requireStaff } from '@/server/auth/viewer';
 import { deskResource } from '@/server/dal/desk';
 
@@ -23,6 +29,7 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
   const search = await props.searchParams;
   const isNew = search.yeni === '1';
   const refused = deskError(search.hata);
+  const checklist = publishChecklist(r);
 
   return (
     <>
@@ -68,6 +75,48 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
           </form>
         )}
       </div>
+
+      <section className={styles.panel} aria-labelledby="yayin-oncesi">
+        <h2 id="yayin-oncesi">yayın öncesi denetim</h2>
+        <ul className={styles.checklist}>
+          {checklist.map((c) => (
+            <li key={c.key} data-ok={c.ok || undefined}>
+              <span aria-hidden="true">{c.ok ? '✓' : '○'}</span>
+              <span>
+                {c.label}
+                {!c.ok && <span className={ui.hint}> — {c.fix}</span>}
+                <span className="visually-hidden">{c.ok ? ' (tamam)' : ' (eksik)'}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className={styles.approval}>
+          <p>
+            son insan onayı:{' '}
+            {r.approved_at ? (
+              <strong>{formatShort(r.approved_at)}</strong>
+            ) : (
+              <span className={`${styles.pill} ${styles.pillWarn}`}>onay bekliyor</span>
+            )}
+            {r.link_report_count > 0 && (
+              <span className={`${styles.pill} ${styles.pillBad}`}>
+                üye bildirimi: bağlantı açılmıyor ({r.link_report_count})
+              </span>
+            )}
+          </p>
+          <form action={approveResourceAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <button className={`${ui.button} ${ui.small}`}>
+              künyeyi ve bağlantıyı kontrol ettim
+            </button>
+          </form>
+          <p className={ui.hint}>
+            bağlantıyı açıp başlık, yazar, yayın ve tarihi kaynağın kendisinden doğruladıysan
+            onayla. bağlantı ya da künye değişirse onay kendiliğinden düşer.
+            {r.provenance && <> köken: {r.provenance}.</>}
+          </p>
+        </div>
+      </section>
 
       <section className={styles.panel}>
         <ResourceForm filmId={r.film_id} layer={r.layer} resource={r} />

@@ -271,3 +271,75 @@
     grid-template-columns: 1fr 1fr 1fr;
   }
 }
+
+.checklist {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: 0.5rem;
+  color: var(--ink-2);
+}
+
+.checklist li > span:first-child {
+  color: var(--warn);
+}
+
+.checklist li[data-ok] > span:first-child {
+  color: var(--ok);
+}
+
+.approval {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.approval > p:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.formPart {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.formPart > legend {
+  padding: 0 0.5rem 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.formMore {
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.formMore > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.formMore[open] > summary {
+  margin-bottom: 1rem;
+}

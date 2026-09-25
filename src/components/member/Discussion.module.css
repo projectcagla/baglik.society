@@ -100,3 +100,48 @@
 .linkButton:hover {
   color: var(--ink-2);
 }
+
+.rule {
+  max-width: var(--measure);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.gone {
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.flag {
+  color: var(--warn);
+}
+
+.moderated {
+  opacity: 0.6;
+}
+
+.record {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, max-content) minmax(0, 1fr);
+  gap: 0.6rem 1.25rem;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.record dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  padding-top: 0.15rem;
+}
+
+.record dd {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  color: var(--ink-2);
+}

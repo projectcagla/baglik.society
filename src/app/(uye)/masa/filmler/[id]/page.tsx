@@ -5,6 +5,7 @@ import { FilmForm } from '@/components/desk/FilmForm';
 import { NoteForm } from '@/components/desk/NoteForm';
 import styles from '@/components/desk/Desk.module.css';
 import ui from '@/components/ui/ui.module.css';
+import { deskError } from '@/lib/desk-errors';
 import { brandLower, programLabel, SECTION_LABELS, SPOILER_LABELS } from '@/lib/text';
 import {
   deleteFilmAction,
@@ -101,6 +102,7 @@ export default async function DeskFilmPage(props: PageProps<'/masa/filmler/[id]'
   const { film, resources, questions, notes } = data;
   const before = resources.filter((r) => r.layer === 'once');
   const after = resources.filter((r) => r.layer === 'sonra');
+  const refused = deskError((await props.searchParams).hata);
 
   return (
     <>
@@ -114,6 +116,12 @@ export default async function DeskFilmPage(props: PageProps<'/masa/filmler/[id]'
           </a>
         </span>
       </div>
+
+      {refused && (
+        <p className={`${ui.status} ${ui.statusBad}`} role="alert">
+          {refused}
+        </p>
+      )}
 
       <section className={styles.panel} aria-labelledby="yayin">
         <h2 id="yayin">yayın</h2>

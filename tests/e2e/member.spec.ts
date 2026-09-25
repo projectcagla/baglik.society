@@ -36,7 +36,9 @@ test.describe('member', () => {
     ).toBeVisible();
     // the after layer is closed for 002
     await page.goto('/filmler/002-canavar/sonra');
-    await expect(page.getByText('sonrası, gösterimden sonra açılır.')).toBeVisible();
+    await expect(
+      page.getByText('sonrası, gece gerçekleştikten sonra editör tarafından açılır.'),
+    ).toBeVisible();
   });
 
   test('archive: drive my car with its after layer and discussion', async ({ page }) => {
@@ -54,6 +56,15 @@ test.describe('member', () => {
     await page.getByLabel('düşüncen').fill('Hikâyenin tamamı değil, dinlemeye razı olmak.');
     await page.getByRole('button', { name: 'ekle' }).click();
     await expect(page.getByText('Hikâyenin tamamı değil, dinlemeye razı olmak.')).toBeVisible();
+    // the record states only what happened; no empty editor-note placeholder for members
+    await expect(page.getByRole('heading', { name: 'masadan kalan sorular' })).toBeVisible();
+    await expect(page.getByText('izlendi · tarihi kayda geçmedi')).toBeVisible();
+    await expect(page.getByText(/notları henüz yazılmadı|editör notu yok/)).toHaveCount(0);
+    // withdrawing is the only way to take words back
+    const mine = page.locator('li', { hasText: 'Hikâyenin tamamı değil' });
+    await expect(mine.getByRole('button', { name: /düzenle/ })).toHaveCount(0);
+    await mine.getByRole('button', { name: 'geri çek' }).click();
+    await expect(page.getByText('Hikâyenin tamamı değil, dinlemeye razı olmak.')).toHaveCount(0);
   });
 
   test('RSVP, calendar file and invitation exports', async ({ page }) => {

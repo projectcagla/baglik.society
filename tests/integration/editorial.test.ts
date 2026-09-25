@@ -3,7 +3,15 @@ import { asAnonymous, asMember } from '@/server/db/context';
 import { asSystem } from '@/server/db/system';
 import { closeDb } from '@/server/db/client';
 import { getFilm, reportLink } from '@/server/dal/films';
-import { addContribution } from '@/server/dal/journal';
+import { moderateContribution, moderateJournal } from '@/server/dal/desk';
+import {
+  addContribution,
+  createEntry,
+  listContributions,
+  listHiddenShared,
+  listOwnEntries,
+  shareEntry,
+} from '@/server/dal/journal';
 import { film, makeMember, viewerFor } from '../support/fixtures';
 
 afterAll(closeDb);
@@ -196,5 +204,85 @@ describe('discussion', () => {
     );
     expect(after).toMatchObject({ body: 'ilk hâli', status: 'geri_cekildi' });
     await asSystem((tx) => tx`delete from contributions where id = ${c!.id}`);
+  });
+});
+
+describe('after-layer moderation and withdrawals', () => {
+  it('withdrawn text never leaves the server; removal is reversible and audited', async () => {
+    const admin = viewerFor(await makeMember('admin'), 'admin', true);
+    const adminNoMfa = { ...admin, mfaFresh: false };
+    const [q] = await asSystem(
+      (tx) =>
+        tx<
+          { id: string }[]
+        >`select id from questions where film_id = ${dmc} and layer = 'sonra' limit 1`,
+    );
+    const author = viewerFor(await makeMember('member'), 'member');
+    for (const body of ['GERI-CEKILEN', 'KALDIRILAN']) {
+      await addContribution(author, {
+        filmId: dmc,
+        questionId: q!.id,
+        parentId: null,
+        body,
+        attribution: 'isimli',
+      });
+    }
+    const rows = await asSystem(
+      (tx) =>
+        tx<
+          { id: string; body: string }[]
+        >`select id, body from contributions where member_id = ${author.id}`,
+    );
+    const withdrawn = rows.find((r) => r.body === 'GERI-CEKILEN')!.id;
+    const removed = rows.find((r) => r.body === 'KALDIRILAN')!.id;
+    await asMember(
+      { memberId: author.id, mfa: false },
+      (tx) => tx`update contributions set status = 'geri_cekildi' where id = ${withdrawn}`,
+    );
+    await expect(moderateContribution(adminNoMfa, removed, 'kaldirildi')).rejects.toThrow(
+      /not allowed/,
+    );
+    await moderateContribution(admin, removed, 'kaldirildi');
+
+    // the author, another member and the moderator: nobody gets the withdrawn text
+    for (const v of [author, member, admin]) {
+      const seen = JSON.stringify(await listContributions(v, dmc));
+      expect(seen, v.role).not.toContain('GERI-CEKILEN');
+    }
+    // the removed one reaches only the moderator (to be able to restore it)
+    expect(JSON.stringify(await listContributions(member, dmc))).not.toContain('KALDIRILAN');
+    expect(JSON.stringify(await listContributions(adminNoMfa, dmc))).not.toContain('KALDIRILAN');
+    expect(JSON.stringify(await listContributions(admin, dmc))).toContain('KALDIRILAN');
+
+    await moderateContribution(admin, removed, 'yayinda');
+    expect(JSON.stringify(await listContributions(member, dmc))).toContain('KALDIRILAN');
+    const log = await asSystem(
+      (tx) => tx<{ state: string }[]>`
+        select meta->>'state' as state from audit_logs
+         where action = 'contribution.moderate' and target_id = ${removed} order by id`,
+    );
+    expect(log.map((l) => l.state)).toEqual(['kaldirildi', 'yayinda']);
+    await asSystem((tx) => tx`delete from contributions where member_id = ${author.id}`);
+  });
+
+  it('a hidden shared note can be restored; private notes stay out of reach', async () => {
+    const admin = viewerFor(await makeMember('admin'), 'admin', true);
+    const author = viewerFor(await makeMember('member'), 'member');
+    await createEntry(author, { filmId: null, kind: 'serbest', body: 'PAYLASILAN-NOT' });
+    await createEntry(author, { filmId: null, kind: 'serbest', body: 'OZEL-NOT' });
+    const entries = await listOwnEntries(author);
+    const shared = entries.find((e) => e.body === 'PAYLASILAN-NOT')!;
+    await shareEntry(author, shared.id, 'isimli');
+    await moderateJournal(admin, shared.id, 'gizlendi');
+
+    expect(await listHiddenShared(editor)).toEqual([]);
+    expect(await listHiddenShared({ ...admin, mfaFresh: false })).toEqual([]);
+    const hidden = JSON.stringify(await listHiddenShared(admin));
+    expect(hidden).toContain('PAYLASILAN-NOT');
+    expect(hidden).not.toContain('OZEL-NOT');
+
+    await moderateJournal(admin, shared.id, 'gorunur');
+    expect(JSON.stringify(await listHiddenShared(admin))).not.toContain('PAYLASILAN-NOT');
+    await asSystem((tx) => tx`delete from journal_entries where member_id = ${author.id}`);
   });
 });

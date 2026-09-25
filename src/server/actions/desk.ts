@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { DESK_ERRORS, type DeskErrorCode } from '@/lib/desk-errors';
 import { safeReturnPath } from '@/lib/return-path';
 import { istanbulLocalToDate } from '@/lib/dates';
 import { filmSlug } from '@/lib/text';
@@ -51,8 +52,27 @@ const optUrl = z
   .optional()
   .transform((v) => (v ? v : null));
 
+/**
+ * Runs a desk write whose refusal is an editorial rule (enforced by the
+ * database), returning the rule's code for the page to explain; anything
+ * else is rethrown.
+ */
+async function deskErrorCode(write: () => Promise<unknown>): Promise<DeskErrorCode | null> {
+  try {
+    await write();
+    return null;
+  } catch (err) {
+    const m = err instanceof Error ? err.message : '';
+    if (m.includes('after layer requires a screening')) return 'sonra-erken';
+    if (m.includes('resources_no_spoiler_before')) return 'spoiler-once';
+    throw err;
+  }
+}
+
 function fail(err: unknown, fallback = 'kaydedilemedi.'): DeskState {
   const m = err instanceof Error ? err.message : '';
+  if (m.includes('resources_no_spoiler_before'))
+    return { ok: false, message: DESK_ERRORS['spoiler-once'] };
   if (m.includes('duplicate key') && m.includes('slug'))
     return { ok: false, message: 'bu adres (slug) başka bir filmde kullanılıyor.' };
   if (m.includes('duplicate key') && m.includes('program_no'))
@@ -157,8 +177,9 @@ export async function filmPublicationAction(form: FormData): Promise<void> {
   const id = uuid.parse(form.get('id'));
   const layer = z.enum(['film', 'after']).parse(form.get('layer'));
   const on = form.get('on') === '1';
-  await desk.setFilmPublication(v, id, layer, on);
+  const code = await deskErrorCode(() => desk.setFilmPublication(v, id, layer, on));
   revalidatePath('/', 'layout');
+  if (code) redirect(`/masa/filmler/${id}?hata=${code}`);
 }
 
 export async function deleteFilmAction(form: FormData): Promise<void> {
@@ -244,8 +265,10 @@ export async function saveResourceAction(_prev: DeskState, form: FormData): Prom
 
 export async function resourceStatusAction(form: FormData): Promise<void> {
   const v = await requireStaff();
-  await desk.setResourceStatus(v, uuid.parse(form.get('id')), form.get('on') === '1');
+  const id = uuid.parse(form.get('id'));
+  const code = await deskErrorCode(() => desk.setResourceStatus(v, id, form.get('on') === '1'));
   revalidatePath('/', 'layout');
+  if (code) redirect(`/masa/kaynaklar/${id}?hata=${code}`);
 }
 
 export async function moveResourceAction(form: FormData): Promise<void> {
@@ -670,8 +693,11 @@ export async function moderateAction(form: FormData): Promise<void> {
   const v = await requireAdmin();
   const id = uuid.parse(form.get('id'));
   const what = z.enum(['contribution', 'journal']).parse(form.get('what'));
+  // every moderation step can be undone, and each one is written to the audit log
+  const restore = form.get('op') === 'restore';
   const path = safeReturnPath(String(form.get('path') ?? ''));
-  if (what === 'contribution') await desk.moderateContribution(v, id, 'kaldirildi');
-  else await desk.moderateJournal(v, id, 'gizlendi');
+  if (what === 'contribution')
+    await desk.moderateContribution(v, id, restore ? 'yayinda' : 'kaldirildi');
+  else await desk.moderateJournal(v, id, restore ? 'gorunur' : 'gizlendi');
   if (path) revalidatePath(path);
 }

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { base32Decode, currentStep, hotp } from '../../src/lib/totp';
-import { db, login, loginAs } from './helpers';
+import { db, login, loginAs, state } from './helpers';
 
 const totp = (secret: string, offset = 0) =>
   hotp(base32Decode(secret.replace(/\s/g, '')), currentStep() + offset);
@@ -116,6 +116,63 @@ test.describe.serial('desk', () => {
     await db(
       (sql) => sql`update event_private set location_text = null where event_id = ${ev!.id}`,
     );
+    await ownerCtx.close();
+  });
+
+  test('the after layer of a coming film cannot be opened; the desk says why', async ({ page }) => {
+    await loginAs(page, 'editor');
+    const [f] = await db(
+      (sql) => sql<{ id: string }[]>`select id from films where slug = '002-canavar'`,
+    );
+    await page.goto(`/masa/filmler/${f!.id}`);
+    await page.getByRole('button', { name: 'sonrasını aç' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'ancak gösterimden sonra açılabilir' }),
+    ).toBeVisible();
+    const [row] = await db(
+      (sql) =>
+        sql<
+          { after_published_at: Date | null }[]
+        >`select after_published_at from films where id = ${f!.id}`,
+    );
+    expect(row!.after_published_at).toBeNull();
+  });
+
+  test('moderation is reversible and written down', async ({ browser }) => {
+    const [c] = await db(
+      (sql) => sql<{ id: string }[]>`
+        insert into contributions (film_id, question_id, member_id, body, attribution, attribution_name)
+        select f.id, q.id, ${state().member.id}, 'moderasyon denemesi', 'isimli', ${state().member.name}
+          from films f join questions q on q.film_id = f.id and q.layer = 'sonra'
+         where f.slug = '001-drive-my-car' limit 1
+        returning id`,
+    );
+    const ownerCtx = await browser.newContext({ storageState: ownerState });
+    const page = await ownerCtx.newPage();
+    await page.goto('/filmler/001-drive-my-car/sonra');
+    const item = page.locator('li', { hasText: 'moderasyon denemesi' });
+    await item.getByRole('button', { name: 'kaldır (moderasyon)' }).click();
+    await expect(item).toContainText('kaldırıldı (moderasyon)');
+
+    const other = await browser.newContext();
+    const member = await other.newPage();
+    await loginAs(member, 'editor');
+    await member.goto('/filmler/001-drive-my-car/sonra');
+    await expect(member.getByText('moderasyon denemesi')).toHaveCount(0);
+
+    await item.getByRole('button', { name: 'geri aç (moderasyon)' }).click();
+    await expect(item.getByRole('button', { name: 'kaldır (moderasyon)' })).toBeVisible();
+    await member.reload();
+    await expect(member.getByText('moderasyon denemesi')).toBeVisible();
+
+    const log = await db(
+      (sql) => sql<{ state: string }[]>`
+        select meta->>'state' as state from audit_logs
+         where action = 'contribution.moderate' and target_id = ${c!.id} order by at`,
+    );
+    expect(log.map((l) => l.state)).toEqual(['kaldirildi', 'yayinda']);
+    await db((sql) => sql`delete from contributions where id = ${c!.id}`);
+    await other.close();
     await ownerCtx.close();
   });
 });

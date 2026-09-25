@@ -23,15 +23,15 @@ export function NoteForm({
     <form id={formId} action={action} className={styles.grid}>
       <input type="hidden" name="filmId" value={filmId} />
       <input type="hidden" name="id" value={note?.id ?? ''} />
-      <Text name="title" label="başlık" defaultValue={note?.title ?? 'oturum notları'} required />
+      <Text name="title" label="başlık" defaultValue={note?.title ?? 'editörün notu'} required />
       <Area
         name="body"
-        label="metin"
+        label="metin (isteğe bağlı, 80–180 kelime)"
         defaultValue={note?.body}
         rows={10}
-        hint="boş satır: yeni paragraf · ## ara başlık · > alıntı · ? soru · *italik* · [metin](https://…)"
+        hint="gecenin ardından kendi yazdığın kısa not; özet uydurma, otomatik üretilmiş metin koyma. boş satır: yeni paragraf · *italik* · [metin](https://…)"
       />
-      <Text name="author_credit" label="imza" defaultValue={note?.author_credit} />
+      <Text name="author_credit" label="imza (isteğe bağlı)" defaultValue={note?.author_credit} />
       <div className={ui.row}>
         <button type="submit" className={ui.button} disabled={pending}>
           {pending ? 'bekle' : 'kaydet'}

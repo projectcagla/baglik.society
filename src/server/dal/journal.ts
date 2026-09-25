@@ -44,6 +44,20 @@ export async function listSharedEntries(v: Viewer): Promise<JournalEntry[]> {
   );
 }
 
+/** Shared notes an admin hid; only an admin with a fresh second factor gets rows (RLS). */
+export async function listHiddenShared(v: Viewer): Promise<JournalEntry[]> {
+  if (!(v.isAdmin && v.mfaFresh)) return [];
+  return asMember(
+    actorOf(v),
+    (tx) => tx<JournalEntry[]>`
+      select j.*, f.title as film_title, f.slug as film_slug, f.program_no
+        from journal_entries j left join films f on f.id = j.film_id
+       where j.visibility = 'paylasildi' and j.moderation = 'gizlendi'
+       order by j.shared_at desc nulls last
+       limit 60`,
+  );
+}
+
 export interface EntryInput {
   filmId: string | null;
   kind: JournalEntry['kind'];
@@ -105,12 +119,23 @@ export interface Contribution {
   created_at: Date;
 }
 
+/**
+ * Every contribution the database lets this viewer see, oldest first. Rows
+ * that are no longer published keep their place in the thread (so replies
+ * are not orphaned) but lose their text — except that an admin with a fresh
+ * second factor still reads a moderated one, to be able to restore it.
+ */
 export async function listContributions(v: Viewer, filmId: string): Promise<Contribution[]> {
-  return asMember(
+  const rows = await asMember(
     actorOf(v),
     (tx) => tx<Contribution[]>`
-      select * from contributions where film_id = ${filmId} and status = 'yayinda'
-       order by created_at`,
+      select * from contributions where film_id = ${filmId} order by created_at`,
+  );
+  const moderator = v.isAdmin && v.mfaFresh;
+  return rows.map((c) =>
+    c.status === 'yayinda' || (c.status === 'kaldirildi' && moderator)
+      ? c
+      : { ...c, body: '', attribution_name: null },
   );
 }
 

@@ -121,6 +121,8 @@ export interface FilmEvent {
   status: string;
   title: string | null;
   invited: boolean;
+  /** the night has started and was not cancelled (decided by the database clock) */
+  took_place: boolean;
 }
 
 /**
@@ -147,6 +149,7 @@ export async function getFilm(
        where film_id = ${film.id} order by coalesce(published_at, created_at)`;
     const events = await tx<FilmEvent[]>`
       select e.number, e.starts_at, e.status, e.title,
+             (e.status <> 'iptal' and e.starts_at <= now()) as took_place,
              exists (select 1 from event_invitees i where i.event_id = e.id
                       and i.member_id = ${v.id} and i.status = 'davetli') as invited
         from events e

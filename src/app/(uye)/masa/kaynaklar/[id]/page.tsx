@@ -5,6 +5,7 @@ import { ResourceForm } from '@/components/desk/ResourceForm';
 import styles from '@/components/desk/Desk.module.css';
 import ui from '@/components/ui/ui.module.css';
 import { formatShort } from '@/lib/dates';
+import { deskError } from '@/lib/desk-errors';
 import { programLabel } from '@/lib/text';
 import { checkLinkAction, deleteResourceAction, resourceStatusAction } from '@/server/actions/desk';
 import { requireStaff } from '@/server/auth/viewer';
@@ -19,7 +20,9 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
   const data = await deskResource(viewer, id);
   if (!data) notFound();
   const { resource: r, checks } = data;
-  const isNew = (await props.searchParams).yeni === '1';
+  const search = await props.searchParams;
+  const isNew = search.yeni === '1';
+  const refused = deskError(search.hata);
 
   return (
     <>
@@ -37,6 +40,11 @@ export default async function EditResource(props: PageProps<'/masa/kaynaklar/[id
       </div>
       {isNew && (
         <p className={ui.status}>kaynak taslak olarak oluşturuldu. hazır olduğunda yayımla.</p>
+      )}
+      {refused && (
+        <p className={`${ui.status} ${ui.statusBad}`} role="alert">
+          {refused}
+        </p>
       )}
 
       <div className={ui.row}>

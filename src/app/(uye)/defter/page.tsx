@@ -8,7 +8,12 @@ import { entryVisibilityAction } from '@/server/actions/member';
 import { moderateAction } from '@/server/actions/desk';
 import { requireMember } from '@/server/auth/viewer';
 import { listFilms, listSaved } from '@/server/dal/films';
-import { listOwnEntries, listSharedEntries, type JournalEntry } from '@/server/dal/journal';
+import {
+  listHiddenShared,
+  listOwnEntries,
+  listSharedEntries,
+  type JournalEntry,
+} from '@/server/dal/journal';
 
 export const metadata: Metadata = { title: 'defter' };
 
@@ -42,11 +47,12 @@ function EntryMeta({ e }: { e: JournalEntry }) {
 
 export default async function JournalPage() {
   const viewer = await requireMember();
-  const [own, shared, films, saved] = await Promise.all([
+  const [own, shared, films, saved, hidden] = await Promise.all([
     listOwnEntries(viewer),
     listSharedEntries(viewer),
     listFilms(viewer),
     listSaved(viewer),
+    listHiddenShared(viewer),
   ]);
   const filmOptions = films
     .filter((f) => f.published_at)
@@ -155,12 +161,37 @@ export default async function JournalPage() {
         )}
       </section>
 
-      <section className={ed.section} aria-labelledby="kaydedilenler">
-        <h2 id="kaydedilenler" className={ed.kicker}>
-          kaydedilenler
+      {hidden.length > 0 && (
+        <section className={ed.section} aria-labelledby="gizlenenler">
+          <h2 id="gizlenenler" className={ed.kicker}>
+            gizlenen paylaşımlar · yalnızca yönetici
+          </h2>
+          <ul role="list" className={ed.list}>
+            {hidden.map((e) => (
+              <li key={e.id} className={ed.entry}>
+                <EntryMeta e={e} />
+                <p className={ed.entryBody}>{e.body}</p>
+                <form action={moderateAction}>
+                  <input type="hidden" name="id" value={e.id} />
+                  <input type="hidden" name="what" value="journal" />
+                  <input type="hidden" name="op" value="restore" />
+                  <input type="hidden" name="path" value="/defter" />
+                  <button type="submit" className={ed.linkButton}>
+                    geri aç (moderasyon)
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className={ed.section} aria-labelledby="sonra-okunacaklar">
+        <h2 id="sonra-okunacaklar" className={ed.kicker}>
+          sonra okunacaklar
         </h2>
         {saved.length === 0 ? (
-          <p className={ed.empty}>okuma odasında “kaydet” dediğin kaynaklar burada durur.</p>
+          <p className={ed.empty}>okuma sayfasında “sonra oku” dediğin kaynaklar burada durur.</p>
         ) : (
           <ul role="list" className={ed.list}>
             {saved.map((s) => (

@@ -1,0 +1,254 @@
+/* shared controls: quiet, outlined, never louder than the content */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.875rem;
+  padding: 0 1.35rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgb(184 151 220 / 0.06);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primary {
+  border-color: rgb(184 151 220 / 0.6);
+}
+
+.danger:hover:not(:disabled) {
+  border-color: var(--bad);
+  background: rgb(232 169 174 / 0.06);
+}
+
+.small {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+}
+
+.textAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 1rem;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.3em;
+}
+
+.textAction:hover {
+  text-decoration-color: var(--accent);
+}
+
+.textAction[aria-disabled='true'] {
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.arrow {
+  font-family: var(--font-text);
+  transition: transform var(--dur) var(--ease);
+}
+
+.textAction:hover .arrow {
+  transform: translateX(3px);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+/* form fields */
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.hint {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: 2.875rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.1rem) 55%,
+    calc(100% - 0.8rem) 55%;
+  background-size: 0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding-top: 0.6rem;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+
+.status {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.statusOk::before {
+  content: '✓ ';
+  color: var(--ok);
+}
+
+.statusBad::before {
+  content: '! ';
+  color: var(--bad);
+}
+
+.fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.fieldset legend {
+  padding: 0;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.segmented label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.875rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.segmented label:has(input:checked) {
+  border-color: var(--accent);
+  background: rgb(184 151 220 / 0.1);
+}
+
+.segmented label:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.code {
+  display: block;
+  padding: 1rem 1.1rem;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.spaced {
+  margin-top: 0.75rem;
+}

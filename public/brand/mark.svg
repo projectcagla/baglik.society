@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="186 192 180 336" role="img" aria-label="bağlık.society">
+  <!-- Simplified single-colour derivative of the approved master, traced in
+       master pixel coordinates. Texture, grain and light spill are omitted on
+       purpose. Differences: docs/brand/ASSET_MANIFEST.md -->
+  <defs>
+    <linearGradient id="bs-mark-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2EEF3"/>
+      <stop offset="0.55" stop-color="#D2C4E0"/>
+      <stop offset="1" stop-color="#7A57A0"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#bs-mark-fill)" fill-rule="evenodd" d="M257 200 L198 226 L209 237 L209 523 L276 523 L335 496 L355 470 L355 376 C355 338 330 312 293 312 C276 312 262 322 257 333 Z M257 338 C262 327 270 320 280 320 C297 320 309 338 309 360 L309 469 L257 497 Z M335.5 404 A6 6 0 1 0 335.5 416 A6 6 0 1 0 335.5 404 Z M326 423 Q326 418 331 418 L340 418 Q345 418 345 423 L343 448 L342 474 L329.5 474 L328 448 Z"/>
+</svg>

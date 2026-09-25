@@ -1,0 +1,27 @@
+.quiet {
+  min-height: 70dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 3rem var(--gutter);
+  text-align: center;
+}
+
+.mark {
+  width: 2.25rem;
+  height: auto;
+  opacity: 0.8;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: var(--step-3);
+  color: var(--ink-2);
+}
+
+.quiet p {
+  color: var(--ink-3);
+}

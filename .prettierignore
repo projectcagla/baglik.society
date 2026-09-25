@@ -1,0 +1,14 @@
+.next
+node_modules
+public
+coverage
+playwright-report
+test-results
+*.md
+db/migrations/*.sql
+scripts/brand
+artifacts
+test-results
+brand
+AGENTS.md
+CLAUDE.md

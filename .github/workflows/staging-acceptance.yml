@@ -1,0 +1,41 @@
+name: staging-acceptance
+
+# Run by hand against a FRESH staging deployment (never production): an
+# anonymous smoke test, then the full acceptance path with synthetic accounts
+# created through /kurulum. Screenshots of synthetic data are kept 7 days.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'staging URL, e.g. https://baglik-society-git-staging-….vercel.app'
+        required: true
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      STAGING_URL: ${{ inputs.url }}
+      # optional: Vercel "Protection Bypass for Automation" for protected previews
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: anonymous smoke test
+        run: npm run smoke -- "$STAGING_URL"
+      - run: npx playwright install --with-deps chromium
+      - name: acceptance (synthetic owner, editor, member, outsider)
+        run: npx playwright test -c playwright.acceptance.config.ts
+        env:
+          ACCEPTANCE_CONFIRM: staging
+          SETUP_TOKEN: ${{ secrets.STAGING_SETUP_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-acceptance-screenshots
+          path: artifacts/acceptance
+          retention-days: 7

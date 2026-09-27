@@ -9,6 +9,8 @@ export async function seed(url?: string, log = console.log) {
   const sql = scriptSql(url);
   try {
     await sql.begin(async (tx) => {
+      // two servers booting at once must not both insert the same film
+      await tx`select pg_advisory_xact_lock(hashtext('baglik:seed'))`;
       for (const f of films) {
         const existing = await tx`select id from films where slug = ${f.slug}`;
         if (existing.length) {

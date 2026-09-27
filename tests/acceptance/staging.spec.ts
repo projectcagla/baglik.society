@@ -1,17 +1,24 @@
 import { mkdirSync } from 'node:fs';
 import { devices, expect, test, type Browser, type Page } from '@playwright/test';
+import { formatEventDate, istanbulLocalToDate } from '../../src/lib/dates';
 import { base32Decode, currentStep, hotp } from '../../src/lib/totp';
 
 // Staging acceptance — a real visitor's path through a FRESH staging
 // deployment, using only synthetic accounts it creates itself:
-//   first owner via /kurulum → owner key + second factor → editor, member and
-//   outsider accounts → editor approves and publishes Canavar sources → member
-//   reads, marks, RSVPs → location stays closed → outsider is refused → owner
-//   releases a fake location to "geliyorum" → member sees it → owner withdraws it.
+//   first owner via /kurulum → owner key + second factor → a synthetic Canavar
+//   night a month ahead (the seeded night may already be past) → editor, member
+//   and outsider accounts → editor approves and publishes Canavar sources →
+//   member reads, marks, RSVPs → location stays closed → outsider is refused →
+//   owner releases a fake location to "geliyorum" → member sees it → withdraws it.
 // Never run against production: it consumes the one-time owner setup.
 // Codes are held in memory only (no traces, no screenshots of code screens).
 
 const SETUP_TOKEN = process.env.SETUP_TOKEN ?? '';
+const NIGHT_NO = 90;
+const NIGHT_DAY = new Date(Date.now() + 30 * 86_400_000).toLocaleDateString('sv-SE', {
+  timeZone: 'Europe/Istanbul',
+});
+const NIGHT_LABEL = formatEventDate(istanbulLocalToDate(`${NIGHT_DAY}T19:30`)!);
 const SHOTS = 'artifacts/acceptance';
 const log: { role: string; step: string; url: string; result: string }[] = [];
 const note = (role: string, step: string, page: Page, result = 'ok') =>
@@ -96,6 +103,18 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
   expect(setupAgain.status()).toBeGreaterThanOrEqual(300);
   note('anonim', 'kurucu oluşunca /kurulum kapandı', setup);
 
+  // ── owner schedules a synthetic Canavar night a month ahead ───────────────
+  await owner.page.goto('/masa/geceler/yeni');
+  await owner.page.getByLabel('gece no').fill(String(NIGHT_NO));
+  await owner.page.getByLabel('özel başlık').fill('kabul gecesi (sentetik)');
+  await owner.page.getByLabel('durum', { exact: true }).selectOption('davet');
+  await owner.page.getByLabel('başlangıç (istanbul)').fill(`${NIGHT_DAY}T19:30`);
+  await owner.page.getByRole('checkbox', { name: /canavar/ }).check();
+  await owner.page.getByRole('button', { name: 'geceyi oluştur' }).click();
+  await owner.page.waitForURL(/\/masa\/geceler\/[0-9a-f-]{36}$/);
+  const nightDesk = owner.page.url();
+  note('kurucu', `sentetik gece ${NIGHT_NO} (${NIGHT_LABEL})`, owner.page);
+
   // ── owner creates synthetic editor, member, outsider ──────────────────────
   const codes: Record<string, string> = {};
   for (const [name, role, invite] of [
@@ -111,7 +130,11 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
     await owner.page.getByRole('button', { name: 'üyeyi ekle ve davet kodu üret' }).click();
     codes[name] = (await owner.page.locator('code').first().textContent())!;
   }
-  note('kurucu', 'editör, üye, davetsiz üye oluşturuldu; üye 2. geceye davetli', owner.page);
+  note(
+    'kurucu',
+    `editör, üye, davetsiz üye oluşturuldu; üye ${NIGHT_NO}. geceye davetli`,
+    owner.page,
+  );
 
   // ── editor: approves and publishes the Canavar sources ────────────────────
   const editor = await firstEntry(browser, codes['kabul editör']!);
@@ -161,7 +184,7 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
   // ── member on a phone: reading → marks → RSVP → no early location ─────────
   const member = await firstEntry(browser, codes['kabul üye']!, true);
   await expect(member.page.getByRole('heading', { level: 1 })).toHaveText('canavar');
-  await expect(member.page.getByText('27 eylül 2026 · pazar · 19.30')).toBeVisible();
+  await expect(member.page.getByText(NIGHT_LABEL)).toBeVisible();
   await shot(member.page, 'member', 'oda');
   await member.page.getByRole('link', { name: /ön okumaya geç/ }).click();
   await expect(member.page.locator('article').first()).toBeVisible();
@@ -169,7 +192,7 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
   await member.page.locator('article').first().getByRole('button', { name: 'okudum' }).click();
   await expect(member.page.getByText(/okuduğun: 1 \//)).toBeVisible();
   note('üye', 'ön okuma açıldı, ilk kaynak okundu olarak işaretlendi', member.page);
-  await member.page.goto('/geceler/2');
+  await member.page.goto(`/geceler/${NIGHT_NO}`);
   await member.page.getByText('geliyorum', { exact: true }).click();
   await member.page.getByRole('button', { name: 'kaydet' }).click();
   await expect(member.page.getByText('kaydedildi: geliyorum.')).toBeVisible();
@@ -178,9 +201,15 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
     member.page.getByText('konum etkinlik günü davetlilere iletilecektir'),
   ).toBeVisible();
   await shot(member.page, 'member', 'canavar-gece');
-  const icsBefore = await (await member.page.request.get('/geceler/2/takvim')).text();
+  const icsBefore = await (await member.page.request.get(`/geceler/${NIGHT_NO}/takvim`)).text();
   expect(icsBefore).not.toContain('LOCATION:');
   note('üye', 'RSVP kaydedildi; konum ve takvimde adres yok', member.page);
+  // the invitation card: drawn on the server, then JPEG through sharp (native)
+  const card = await member.page.request.get(`/geceler/${NIGHT_NO}/davetiye/kart?bicim=jpg`);
+  expect(card.status()).toBe(200);
+  expect(card.headers()['content-type']).toBe('image/jpeg');
+  expect([...(await card.body()).subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+  note('üye', 'davetiye kartı (JPEG) indirildi', member.page);
   const after = await member.page.goto('/filmler/002-canavar/sonra');
   expect(after?.status()).toBe(200);
   await expect(
@@ -190,29 +219,30 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
 
   // ── outsider: knows the URL, gets nothing ─────────────────────────────────
   const outsider = await firstEntry(browser, codes['kabul davetsiz']!);
-  const night = await outsider.page.goto('/geceler/2');
+  const night = await outsider.page.goto(`/geceler/${NIGHT_NO}`);
   expect(night?.status()).toBe(404);
-  note('davetsiz', '/geceler/2 → 404', outsider.page);
+  note('davetsiz', `/geceler/${NIGHT_NO} → 404`, outsider.page);
 
   // ── owner releases a FAKE location to "geliyorum", then withdraws it ──────
   const FAKE = 'kabul testi · kurmaca adres';
-  await owner.page.goto('/masa/geceler');
-  await owner.page
-    .getByRole('link', { name: /2\. film gecesi|canavar/ })
-    .first()
-    .click();
+  await owner.page.goto(nightDesk);
   await owner.page.getByLabel('gerçek konum').fill(FAKE);
   await owner.page.getByRole('button', { name: 'konum ayarlarını kaydet' }).click();
   await expect(owner.page.getByText('konum ayarları kaydedildi.')).toBeVisible();
-  await member.page.goto('/geceler/2');
+  await member.page.goto(`/geceler/${NIGHT_NO}`);
   expect(await member.page.content()).not.toContain(FAKE);
   await owner.page.getByRole('button', { name: 'şimdi aç' }).click();
+  // the release is a server action: wait until the desk shows it open
+  await expect(owner.page.getByText(/açık · geliyorum diyenler/)).toBeVisible();
   await member.page.reload();
   await expect(member.page.getByText(FAKE)).toBeVisible();
-  expect(await (await member.page.request.get('/geceler/2/takvim')).text()).toContain('LOCATION:');
-  await outsider.page.goto('/geceler/2');
+  expect(await (await member.page.request.get(`/geceler/${NIGHT_NO}/takvim`)).text()).toContain(
+    'LOCATION:',
+  );
+  await outsider.page.goto(`/geceler/${NIGHT_NO}`);
   expect(await outsider.page.content()).not.toContain(FAKE);
   await owner.page.getByRole('button', { name: 'paylaşımı geri çek' }).click();
+  await expect(owner.page.getByRole('button', { name: 'paylaşımı geri çek' })).toHaveCount(0);
   await member.page.reload();
   await expect(member.page.getByText(FAKE)).toHaveCount(0);
   note(
@@ -222,4 +252,5 @@ test('staging acceptance: anonymous, owner, editor, member, outsider', async ({ 
   );
   await owner.page.getByLabel('gerçek konum').fill('');
   await owner.page.getByRole('button', { name: 'konum ayarlarını kaydet' }).click();
+  await expect(owner.page.getByText('konum ayarları kaydedildi.')).toBeVisible();
 });

@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // self-contained server for hosts without a build step (scripts/cpanel/bundle.sh)
+  output: process.env.BUILD_STANDALONE === '1' ? 'standalone' : undefined,
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {

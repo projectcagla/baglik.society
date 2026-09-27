@@ -59,3 +59,102 @@ jobs:
             artifacts/qa
             playwright-report
           retention-days: 14
+
+  # The package for cPanel "Setup Node.js App" (docs/CPANEL_KURULUM.md): built
+  # once, booted under Phusion Passenger (the same loader cPanel uses) against
+  # an empty database — migrations and seed run at start — then checked from
+  # the outside and walked through the synthetic acceptance flow.
+  cpanel:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: baglik
+          POSTGRES_PASSWORD: baglik-ci
+          POSTGRES_DB: baglik_cpanel
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U baglik" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: build the package
+        run: bash scripts/cpanel/bundle.sh
+      - name: throwaway secrets for this run (masked, never stored)
+        run: |
+          for n in AUTH_PEPPER APP_ENCRYPTION_KEY; do
+            v=$(openssl rand -base64 32); echo "::add-mask::$v"; echo "$n=$v" >> "$GITHUB_ENV"
+          done
+          for n in CRON_SECRET SETUP_TOKEN; do
+            v=$(openssl rand -hex 24); echo "::add-mask::$v"; echo "$n=$v" >> "$GITHUB_ENV"
+          done
+      - name: boot it under Passenger, as cPanel would
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q passenger
+          mkdir -p "$RUNNER_TEMP/bagliksociety" /tmp/px
+          tar -xzf dist/bagliksociety-cpanel.tar.gz -C "$RUNNER_TEMP/bagliksociety"
+          cd "$RUNNER_TEMP/bagliksociety"
+          /usr/bin/ruby /usr/bin/passenger start --engine builtin --address 127.0.0.1 --port 8080 \
+            -e production --app-type node --startup-file app/server.js --nodejs "$(which node)" \
+            --daemonize --log-file "$RUNNER_TEMP/passenger.log" --pid-file /tmp/px/passenger.pid \
+            --instance-registry-dir /tmp/px \
+            --envvar DATABASE_URL=postgres://baglik:baglik-ci@localhost:5432/baglik_cpanel \
+            --envvar AUTH_PEPPER="$AUTH_PEPPER" --envvar APP_ENCRYPTION_KEY="$APP_ENCRYPTION_KEY" \
+            --envvar CRON_SECRET="$CRON_SECRET" --envvar SETUP_TOKEN="$SETUP_TOKEN" \
+            --envvar APP_ORIGIN=http://localhost:8080 --envvar MIGRATE_ON_BOOT=1 --envvar LINK_CHECK=off
+          for i in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 localhost:8080/api/health)" = 200 ] && break
+            sleep 2
+          done
+          grep '\[açılış\]' "$RUNNER_TEMP/passenger.log"
+          grep -q 'veritabanı hazır' "$RUNNER_TEMP/passenger.log"
+      - name: smoke (anonymous surface)
+        run: npm run smoke -- http://localhost:8080
+      - name: acceptance (synthetic owner, editor, member, outsider)
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.acceptance.config.ts
+        env:
+          ACCEPTANCE_CONFIRM: staging
+          STAGING_URL: http://localhost:8080
+      - name: server log on failure (names and file names only)
+        if: failure()
+        run: tail -n 80 "$RUNNER_TEMP/passenger.log" || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bagliksociety-cpanel
+          path: |
+            dist/bagliksociety-cpanel.tar.gz
+            dist/bagliksociety-cpanel.tar.gz.sha256
+            dist/guncelle.sh
+          retention-days: 14
+
+  # Only a green main publishes: guncelle.sh on the server fetches this release.
+  cpanel-release:
+    needs: [check, cpanel]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: cpanel-release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bagliksociety-cpanel
+          path: dist
+      - name: publish as release "cpanel-latest"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete cpanel-latest --cleanup-tag --yes || true
+          gh release create cpanel-latest dist/bagliksociety-cpanel.tar.gz \
+            dist/bagliksociety-cpanel.tar.gz.sha256 dist/guncelle.sh \
+            --target "$GITHUB_SHA" --latest=false \
+            --title "cPanel paketi" \
+            --notes "main @ ${GITHUB_SHA::7}. Sunucuda: bash guncelle.sh (docs/CPANEL_KURULUM.md)."

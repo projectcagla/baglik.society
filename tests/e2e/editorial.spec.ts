@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { db, loginAs } from './helpers';
+import { FIXTURE_NIGHT } from '../support/night';
 
 // v1.1: önce → gece, on a phone first.
 test.describe('reading room (önce)', () => {
@@ -145,7 +146,7 @@ test.describe('the night (gece)', () => {
     await expect(hero).toContainText('002');
     await expect(hero.getByRole('heading', { level: 1 })).toHaveText('canavar');
     await expect(hero).toContainText('hirokazu kore-eda');
-    await expect(hero).toContainText('27 eylül 2026 · pazar · 19.30');
+    await expect(hero).toContainText(FIXTURE_NIGHT.label);
     await expect(hero).toContainText('konum etkinlik günü davetlilere iletilecektir');
     await expect(hero).toContainText('davetlisin · katılımını henüz bildirmedin');
     await hero.getByRole('link', { name: /ön okumaya geç/ }).click();
@@ -204,7 +205,7 @@ test.describe('hard conditions', () => {
     await page.goto('/geceler/2');
     const hero = page.locator('section[aria-labelledby="gece-baslik"]');
     await expect(hero.getByRole('heading', { level: 1 })).toHaveText('canavar');
-    await expect(hero).toContainText('27 eylül 2026 · pazar · 19.30');
+    await expect(hero).toContainText(FIXTURE_NIGHT.label);
     await expect(hero.getByRole('link', { name: /ön okumaya geç/ })).toBeVisible();
     const extra = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,

@@ -73,6 +73,21 @@ test.describe.serial('desk', () => {
     ownerState = await page.context().storageState();
   });
 
+  test('owner sees the client address the server counts (self-hosting check)', async ({
+    browser,
+  }) => {
+    // what a host that writes X-Real-IP (cPanel .htaccess, Vercel) hands the app
+    const ctx = await browser.newContext({
+      storageState: ownerState,
+      extraHTTPHeaders: { 'X-Real-IP': '203.0.113.7' },
+    });
+    const page = await ctx.newPage();
+    await page.goto('/masa/guvenlik');
+    await expect(page.getByText('sunucunun bu bağlantıda gördüğü adres')).toBeVisible();
+    await expect(page.locator('code', { hasText: '203.0.113.7' })).toBeVisible();
+    await ctx.close();
+  });
+
   test('owner invites a new member; the one-time code opens the door once', async ({ browser }) => {
     const ownerCtx = await browser.newContext({ storageState: ownerState });
     const page = await ownerCtx.newPage();

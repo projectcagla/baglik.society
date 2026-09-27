@@ -39,6 +39,7 @@
     "dev": "next dev",
     "build": "next build",
     "vercel-build": "npm run db:migrate && npm run db:seed && next build",
+    "bundle:cpanel": "bash scripts/cpanel/bundle.sh",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",

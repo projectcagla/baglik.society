@@ -55,12 +55,13 @@ Yalnızca geliştirme için: `npm run db:seed:demo` açıkça "deneme" diye etik
 | `npm run links:check` | kaynak bağlantılarını denetler (cron ile aynı kod; `LINK_CHECK=off` iken hiçbir istek atmaz) |
 | `npm run smoke -- https://…` | bir dağıtımın anonim yüzeyini, başlıkları, sağlık sinyalini ve kurulum durumunu denetler |
 | `npm run vercel-build` | Vercel build'i: migrasyon → seed → `next build` |
+| `npm run bundle:cpanel` | cPanel/Passenger paketi (`dist/bagliksociety-cpanel.tar.gz`): kendi kendine yeten sunucu, açılışta migrasyon (`MIGRATE_ON_BOOT=1`) |
 | `npx playwright test -c playwright.acceptance.config.ts` | staging kabul testi (yalnız boş staging; bkz. runbook) |
 | `npm run brand:derive` | marka türevlerini master'dan yeniden üretir |
 
 ## yayına alma
 
-Adım adım ve güncel yol: **`docs/PRODUCTION_RUNBOOK.md`** (Vercel + Neon, ortam değişkeni adları, `/kurulum` ile ilk kurucu, smoke test, yedek, geri alma). Release durumu ve kanıtlar: **`docs/RELEASE_2026-09.md`**. Aşağıdaki özet eski kısa yoldur.
+Paylaşımlı hosting (cPanel "Setup Node.js App") + ücretsiz Neon, satın alma olmadan: **`docs/CPANEL_KURULUM.md`**. Vercel yolu: **`docs/PRODUCTION_RUNBOOK.md`** (Vercel + Neon, ortam değişkeni adları, `/kurulum` ile ilk kurucu, smoke test, yedek, geri alma). Release durumu ve kanıtlar: **`docs/RELEASE_2026-09.md`**. Aşağıdaki özet eski kısa yoldur.
 
 ### kısa özet (Vercel + Supabase ya da Neon)
 

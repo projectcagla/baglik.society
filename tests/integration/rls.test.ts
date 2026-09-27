@@ -13,6 +13,7 @@ import {
 } from '@/server/dal/journal';
 import { deskMembers, createMember, saveEventPrivate } from '@/server/dal/desk';
 import { eventTwo, film, invite, makeMember, viewerFor } from '../support/fixtures';
+import { FIXTURE_NIGHT } from '../support/night';
 
 afterAll(closeDb);
 
@@ -162,7 +163,7 @@ describe('events and invitations', () => {
     const outsider = viewerFor(await makeMember('member'), 'member');
     await invite(eventId, invited.id);
     expect((await getEventByNumber(invited, 2))?.event.starts_at.toISOString()).toBe(
-      '2026-09-27T16:30:00.000Z',
+      FIXTURE_NIGHT.iso,
     );
     expect(await getEventByNumber(outsider, 2)).toBeNull();
     expect(await listEvents(outsider)).toHaveLength(0);

@@ -5,38 +5,46 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { scriptSql } from './lib/db';
 
-const dir = join(process.cwd(), 'db', 'migrations');
+// resolved per call: the standalone server changes directory before booting
+const migrationsDir = () => join(process.cwd(), 'db', 'migrations');
+
+// Every step takes the same transaction-scoped advisory lock and re-reads
+// schema_migrations inside it, so two servers booting at once (Passenger may
+// start more than one process) apply each file exactly once.
+const LOCK = 'baglik:migrate';
 
 /** `until`: stop after this file (upgrade tests start from an older schema). */
 export async function migrate(url?: string, log = console.log, opts: { until?: string } = {}) {
   const sql = scriptSql(url);
   try {
-    await sql`create table if not exists schema_migrations (
-      name text primary key, checksum text not null, applied_at timestamptz not null default now())`;
-    const applied = new Map(
-      (
-        await sql<
-          { name: string; checksum: string }[]
-        >`select name, checksum from schema_migrations`
-      ).map((r) => [r.name, r.checksum]),
-    );
-    const files = readdirSync(dir)
+    await sql.begin(async (tx) => {
+      await tx`select pg_advisory_xact_lock(hashtext(${LOCK}))`;
+      await tx`create table if not exists schema_migrations (
+        name text primary key, checksum text not null, applied_at timestamptz not null default now())`;
+    });
+    const files = readdirSync(migrationsDir())
       .filter((f) => f.endsWith('.sql') && (!opts.until || f <= opts.until))
       .sort();
     for (const file of files) {
-      const body = readFileSync(join(dir, file), 'utf8');
+      const body = readFileSync(join(migrationsDir(), file), 'utf8');
       const checksum = createHash('sha256').update(body).digest('hex');
-      const prev = applied.get(file);
-      if (prev) {
-        if (prev !== checksum)
-          throw new Error(`${file} was modified after being applied. Add a new migration instead.`);
-        continue;
-      }
-      await sql.begin(async (tx) => {
+      const applied = await sql.begin(async (tx) => {
+        await tx`select pg_advisory_xact_lock(hashtext(${LOCK}))`;
+        const [prev] = await tx<
+          { checksum: string }[]
+        >`select checksum from schema_migrations where name = ${file}`;
+        if (prev) {
+          if (prev.checksum !== checksum)
+            throw new Error(
+              `${file} was modified after being applied. Add a new migration instead.`,
+            );
+          return false;
+        }
         await tx.unsafe(body);
         await tx`insert into schema_migrations (name, checksum) values (${file}, ${checksum})`;
+        return true;
       });
-      log(`applied ${file}`);
+      if (applied) log(`applied ${file}`);
     }
     log('migrations up to date');
   } finally {

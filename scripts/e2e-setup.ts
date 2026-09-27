@@ -59,7 +59,9 @@ async function main() {
 
   // the seed brings drafts; the (fake) editor approves and publishes Canavar
   const { approveAndPublishForTests } = await import('../tests/support/publish-fixture');
+  const { pinFixtureNight } = await import('../tests/support/night');
   const fx = postgres(url, { max: 1, onnotice: () => {} });
+  await pinFixtureNight(fx);
   await approveAndPublishForTests(fx, out.editor!.id);
   await fx.end();
   await closeDb();

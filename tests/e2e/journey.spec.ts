@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { base32Decode, currentStep, hotp } from '../../src/lib/totp';
 import { db, login, loginAs, state } from './helpers';
+import { FIXTURE_NIGHT } from '../support/night';
 
 // One person's whole season, end to end, against the production build:
 // invitation → first entry → personal key → pre-reading → marks → RSVP →
@@ -87,7 +88,7 @@ test.describe.serial('a season, end to end', () => {
       .getByRole('link', { name: 'gece' })
       .click();
     await expect(me).toHaveURL(/\/geceler\/2$/);
-    await expect(me.getByText('27 eylül 2026 · pazar · 19.30')).toBeVisible();
+    await expect(me.getByText(FIXTURE_NIGHT.label)).toBeVisible();
     await me.getByText('geliyorum', { exact: true }).click();
     await me.getByRole('button', { name: 'kaydet' }).click();
     await expect(me.getByText('kaydedildi: geliyorum.')).toBeVisible();
@@ -107,7 +108,7 @@ test.describe.serial('a season, end to end', () => {
     await expect(me.getByText(PLACE)).toBeVisible();
     const ics = await (await me.request.get('/geceler/2/takvim')).text();
     expect(ics).toContain('LOCATION:');
-    expect(ics).toContain('DTSTART:20260927T163000Z');
+    expect(ics).toContain(FIXTURE_NIGHT.dtstart);
 
     // ── the night happened: the editor opens "sonra" by hand ─────────────────
     await me.goto('/filmler/002-canavar/sonra');

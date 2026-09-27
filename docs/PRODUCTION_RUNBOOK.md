@@ -2,7 +2,7 @@
 
 bağlık.society'yi yayına almak, işletmek ve bir şey ters gittiğinde geri almak için adım adım yol. Değer değil yalnız **adlar** yazılıdır: gizli değerler hiçbir zaman bu depoya, bir PR'a, sohbete ya da ekran görüntüsüne girmez.
 
-Mimari: Next.js 16 (Node çalışma zamanı) + PostgreSQL 16 (RLS). Önerilen barındırma: **Vercel** (uygulama, Frankfurt `fra1`) + **Neon** (veritabanı, Frankfurt `eu-central-1`). İkisinin de ücretsiz planı bu kulübün ölçeğine yeter. Başka bir barındırmada da çalışır: Node 22, TLS ve `x-real-ip` başlığı yazan bir reverse proxy yeterli (bkz. README "yayına alma").
+Mimari: Next.js 16 (Node çalışma zamanı) + PostgreSQL 16 (RLS). Önerilen barındırma: **Vercel** (uygulama, Frankfurt `fra1`) + **Neon** (veritabanı, Frankfurt `eu-central-1`). İkisinin de ücretsiz planı bu kulübün ölçeğine yeter. Başka bir barındırmada da çalışır: Node 22, TLS ve `x-real-ip` başlığı yazan bir reverse proxy yeterli. cPanel'li paylaşımlı hosting için hazır paket ve adım adım yol: **`docs/CPANEL_KURULUM.md`** (uygulama hosting'de, veritabanı Neon'da; bu el kitabının §3 sonrası — içerik, yedek, arıza — orada da geçerli).
 
 ---
 

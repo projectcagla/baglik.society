@@ -22,8 +22,10 @@ export default async function setup() {
   await seed(url, () => {});
   // the seed brings drafts; a (fixture) editor approves and publishes Canavar
   const { approveAndPublishForTests, fixtureEditor } = await import('./publish-fixture');
+  const { pinFixtureNight } = await import('./night');
   const db = postgres(url, { max: 1, onnotice: () => {} });
   try {
+    await pinFixtureNight(db);
     await approveAndPublishForTests(db, await fixtureEditor(db));
   } finally {
     await db.end();

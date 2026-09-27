@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { e2eEnv } from '../../playwright.config';
 import { db, loginAs, state } from './helpers';
+import { FIXTURE_NIGHT } from '../support/night';
 
 // What a stranger, a crawler or a forged form can learn: nothing.
 const PRIVATE_WORDS = [
@@ -13,6 +14,7 @@ const PRIVATE_WORDS = [
   'hamaguchi',
   '27 eylül',
   '2026-09-27',
+  FIXTURE_NIGHT.day,
   'deneme üye',
   'example.test',
 ];

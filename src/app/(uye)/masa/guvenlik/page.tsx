@@ -3,7 +3,7 @@ import { MfaSetup } from '@/components/desk/MfaSetup';
 import styles from '@/components/desk/Desk.module.css';
 import { MFA_FRESH_HOURS } from '@/server/auth/session';
 import { mfaStatus } from '@/server/auth/mfa';
-import { requireStaff } from '@/server/auth/viewer';
+import { requestContext, requireStaff } from '@/server/auth/viewer';
 
 export const metadata: Metadata = { title: 'masa · güvenlik' };
 
@@ -24,6 +24,8 @@ export default async function SecurityPage(props: PageProps<'/masa/guvenlik'>) {
     );
   }
   const status = await mfaStatus(viewer.id);
+  // self-hosting check: the address rate limits count against (never stored in clear)
+  const { ip } = await requestContext();
   return (
     <>
       <h1 className={styles.title}>ikinci doğrulama</h1>
@@ -39,6 +41,12 @@ export default async function SecurityPage(props: PageProps<'/masa/guvenlik'>) {
         )}
         {!viewer.mfaFresh && <MfaSetup enrolled={status.enrolled} returnTo={returnTo} />}
       </section>
+      {viewer.mfaFresh && (
+        <p className="meta">
+          sunucunun bu bağlantıda gördüğü adres: <code>{ip ?? 'yok'}</code>. kendi internet
+          adresinle aynı değilse barındırmanın istemci adresi ayarına bak (docs/CPANEL_KURULUM.md).
+        </p>
+      )}
       <p className="meta">
         doğrulama uygulamanı kaybedersen: kurucu, başka bir yöneticinin ikinci doğrulamasını masadan
         sıfırlayabilir; kurucunun kendisi için veritabanı erişimiyle `npm run mfa:reset -- --email

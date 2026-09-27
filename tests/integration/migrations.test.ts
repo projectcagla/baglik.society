@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { migrate } from '../../scripts/migrate';
+import { seed } from '../../scripts/seed';
 
 // Scratch databases only. The upgrade test starts from the v1 schema
 // (0001–0002) with v1-shaped data, then applies every later migration; the
@@ -17,9 +18,34 @@ async function fresh(name: string) {
 }
 
 afterAll(async () => {
-  for (const name of ['baglik_upgrade_test', 'baglik_rollback_test'])
+  for (const name of ['baglik_upgrade_test', 'baglik_rollback_test', 'baglik_boot_test'])
     await admin.unsafe(`drop database if exists ${name} with (force)`);
   await admin.end();
+});
+
+describe('two servers starting at once (MIGRATE_ON_BOOT)', () => {
+  it('apply each migration and seed row exactly once', async () => {
+    const url = await fresh('baglik_boot_test');
+    const logs: string[][] = [[], [], []];
+    const boot = async (i: number) => {
+      await migrate(url, (m) => logs[i]!.push(m));
+      await seed(url, (m) => logs[i]!.push(m));
+    };
+    await Promise.all([boot(0), boot(1), boot(2)]);
+    const applied = logs.flat().filter((m) => m.startsWith('applied '));
+    const files = readdirSync('db/migrations').filter((f) => f.endsWith('.sql'));
+    expect(applied.sort()).toEqual(files.map((f) => `applied ${f}`).sort());
+    const db = postgres(url, { max: 1, onnotice: () => {} });
+    try {
+      const [n] = await db<{ migrations: number; films: number; events: number }[]>`
+        select (select count(*)::int from schema_migrations) as migrations,
+               (select count(*)::int from films) as films,
+               (select count(*)::int from events) as events`;
+      expect(n).toEqual({ migrations: files.length, films: 2, events: 1 });
+    } finally {
+      await db.end();
+    }
+  });
 });
 
 describe('upgrading a v1 database', () => {

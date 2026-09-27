@@ -1,5 +1,6 @@
 import 'server-only';
 import postgres from 'postgres';
+import { driverUrl } from '@/lib/db-url';
 import { env } from '@/server/env';
 
 // One pool per server instance. `prepare: false` keeps the driver compatible
@@ -10,7 +11,7 @@ const globalForDb = globalThis as unknown as { __baglikSql?: postgres.Sql };
 export function sql(): postgres.Sql {
   if (!globalForDb.__baglikSql) {
     const e = env();
-    globalForDb.__baglikSql = postgres(e.DATABASE_URL, {
+    globalForDb.__baglikSql = postgres(driverUrl(e.DATABASE_URL), {
       max: Number(process.env.DB_POOL_MAX ?? 5),
       prepare: e.DB_PREPARE === 'true',
       idle_timeout: 20,

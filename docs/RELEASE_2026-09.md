@@ -170,3 +170,19 @@ Atlanan (skip) kritik test yok. Başarısız testleri geçirmek için assertion 
 **Neden henüz yayında değil:** Uygulama, testler ve kurulum yolu hazır. Canlıya çıkmak için bir Vercel projesi ve bir Neon veritabanı gerekiyor; ikisi de sahibinin hesabında açılmalı ve gizli değerler panele sahibi tarafından girilmeli. Ardından Canavar kaynaklarının bir kişi tarafından kontrol edilip yayımlanması gerekiyor: bu, tasarım gereği bir yazılımın ya da bu çalışmanın yerine geçemeyeceği bir adım. **Uygulanabilir son adım:** runbook §3'ü staging için uygula, staging adresini paylaş (sır değil). Staging kabulü yeşil olunca aynı adımları production için tekrarla ve §4'ü (≈30 dk) pazar öncesinde tamamla.
 
 **Gece için sorumlu:** konumun gece günü açılması ve e-posta sağlayıcı yoksa elle iletilmesi, sahibin belirleyeceği MFA'lı bir yöneticidedir (runbook §0).
+
+---
+
+## 8. ek — 27 eylül akşamı: cPanel paketi ve saat bağımlılığı
+
+| bulgu / iş | ne yapıldı | kanıt |
+| --- | --- | --- |
+| **testler takvime bağlıydı** — 27 eylül 19.30 geçince `main`'de 3 entegrasyon testi kırıldı (gece "geçmiş" oldu, "sonra" katmanı açılabilir hâle geldi) | test ve e2e kurulumları 2. geceyi aynı gün/saatle **2037**'ye sabitler (`tests/support/night.ts`); iddialar gevşetilmedi, tek sabitten okunuyor. Üretim seed'i gerçek tarihi korur. Kabul testi kendi sentetik gecesini bir ay sonraya kurar | `main` (3e03782) üzerinde 3 başarısız → değişiklikten sonra vitest 108/108 |
+| **cPanel paketi** | `npm run bundle:cpanel`: Next.js standalone sunucu `app/` altında (CloudLinux kökte `node_modules` istemez), açılışta migrasyon + seed (`MIGRATE_ON_BOOT=1`, `src/instrumentation.ts`), `guncelle.sh` (indir → sha256 → değiştir → yeniden başlat → sağlık; `geri`, `dosyadan`), `baglanti-kontrol.sh` (cron; sır stdin'den) | yerelde **Phusion Passenger** altında boş DB: smoke 20/20, kabul 15/15 adım; güncelle/geri/bozuk özet/dosyadan yolları denendi |
+| eşzamanlı açılış | migrasyon ve seed işlem kapsamlı advisory lock ile; iki süreç aynı anda açılsa da her dosya bir kez | `tests/integration/migrations.test.ts` (kilitsiz eski kodda `duplicate key … pg_type` ile kırıldığı görüldü) |
+| **Neon bağlantı adresi** | panelden kopyalanan adresteki `channel_binding=require` postgres.js'te bağlantıyı düşürüyordu ("unrecognized configuration parameter"); `driverUrl()` ayıklar | `tests/unit/db-url.test.ts`, yerel deneme |
+| **istemci adresi** | Passenger uygulamaya ziyaretçi adresi vermiyor, uydurulmuş `X-Real-IP`/`X-Forwarded-For`'u geçiriyor (yerelde ölçüldü) → .htaccess ile sunucu yazar (kılavuz §5); yönetici masa → güvenlik'te sunucunun gördüğü adresi görür | `tests/e2e/admin.spec.ts` |
+| davetiye görseli | glibc < 2.28 sunucuda sharp'ın WebAssembly yedeği pakette ve çalışıyor | yerelde yerel ikili kaldırılarak denendi |
+| CI | `cpanel` işi: paketi kurar, Passenger altında boş Postgres'le açar, smoke + kabul; `cpanel-release`: yalnız yeşil `main` → sürüm `cpanel-latest` | `.github/workflows/ci.yml` |
+
+Kurulum adımları: **`docs/CPANEL_KURULUM.md`**.

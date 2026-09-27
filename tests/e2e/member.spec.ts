@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { db, loginAs } from './helpers';
+import { FIXTURE_NIGHT } from '../support/night';
 
 test.describe('member', () => {
   test('first screen: the next night, nothing else loud', async ({ page }) => {
@@ -8,7 +9,7 @@ test.describe('member', () => {
     await expect(hero.getByRole('heading', { level: 1 })).toHaveText('canavar');
     await expect(hero).toContainText('002');
     await expect(hero).toContainText('hirokazu kore-eda');
-    await expect(hero).toContainText('27 eylül 2026 · pazar · 19.30');
+    await expect(hero).toContainText(FIXTURE_NIGHT.label);
     await expect(hero).toContainText('konum etkinlik günü davetlilere iletilecektir');
     await expect(page.getByRole('link', { name: /ön okumaya geç/ })).toBeVisible();
     await expect(page.getByRole('link', { name: 'katılımını bildir' })).toBeVisible();
@@ -74,7 +75,7 @@ test.describe('member', () => {
     await page.getByRole('button', { name: 'kaydet' }).click();
     await expect(page.getByText('kaydedildi: gelemiyorum.')).toBeVisible();
     const ics = await page.request.get('/geceler/2/takvim');
-    expect(await ics.text()).toContain('DTSTART:20260927T163000Z');
+    expect(await ics.text()).toContain(FIXTURE_NIGHT.dtstart);
     for (const f of ['hikaye', 'gonderi', 'kart']) {
       const res = await page.request.get(`/geceler/2/davetiye/${f}`);
       expect(res.status(), f).toBe(200);

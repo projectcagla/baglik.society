@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { devices, expect, test, type Page } from '@playwright/test';
 import { db, loginAs } from './helpers';
+import { FIXTURE_NIGHT } from '../support/night';
 
 // A real member on a phone. Runs in Chromium and, in CI, in WebKit (the
 // engine behind Safari on iPhone) — the two must behave the same.
@@ -25,7 +26,7 @@ test.describe('member on a phone', () => {
     // oda: one night, one way into the reading
     const hero = page.locator('section[aria-labelledby="gece-baslik"]');
     await expect(hero.getByRole('heading', { level: 1 })).toHaveText('canavar');
-    await expect(hero).toContainText('27 eylül 2026 · pazar · 19.30');
+    await expect(hero).toContainText(FIXTURE_NIGHT.label);
     await noOverflow(page, 'oda');
     await page.screenshot({ path: `${dir}/oda.png` });
     await hero.getByRole('link', { name: /ön okumaya geç/ }).tap();

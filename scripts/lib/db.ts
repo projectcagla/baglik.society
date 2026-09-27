@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { driverUrl } from '../../src/lib/db-url';
 
 // Scripts (migrate, seed, owner) prefer a direct connection: Neon's Vercel
 // integration provides it as DATABASE_URL_UNPOOLED next to the pooled URL.
@@ -9,5 +10,5 @@ export function scriptSql(
     console.error('DATABASE_URL is not set (see .env.example).');
     process.exit(1);
   }
-  return postgres(url, { max: 1, onnotice: () => {}, prepare: false });
+  return postgres(driverUrl(url), { max: 1, onnotice: () => {}, prepare: false });
 }
